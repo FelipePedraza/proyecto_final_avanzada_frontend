@@ -2,10 +2,10 @@ export const environment = {
   production: false,
 
   // URL base del backend
-  apiUrl: 'http://localhost:8080/api',
+  apiUrl: 'http://vivigo-env-1.eba-tkyg2kqj.us-east-2.elasticbeanstalk.com/api',
 
   // WebSocket
-  wsUrl: 'http://localhost:8080/ws',
+  wsUrl: 'http://vivigo-env-1.eba-tkyg2kqj.us-east-2.elasticbeanstalk.com/ws',
 
   // Mapbox
   mapboxToken: 'pk.eyJ1IjoicGVkcmF6YTgzMCIsImEiOiJjbWg5OTQ0MjMxY2F6MmpxNmVibG5pc2V2In0.VrZ9nEk-zYTfqaUrE2rWwg',
