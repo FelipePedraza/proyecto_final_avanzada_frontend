@@ -8,10 +8,10 @@ export const environment = {
   wsUrl: 'https://vivigo-env-01.eba-mufjwmzj.us-east-2.elasticbeanstalk.com/ws',
 
   // Mapbox
-  mapboxToken: 'MAP_TOKEN_PROD',
+  mapboxToken: (window as any).__env?.mapboxToken,
 
   // Stripe
-  stripePublicKey: 'STRIPE_PUBLIC_KEY_PROD',
+  stripePublicKey: (window as any).__env?.stripePublicKey,
 
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
