@@ -102,10 +102,19 @@
                   <!-- Acciones -->
                   <div class="reservation-actions">
 
-                    <!-- Estado -->
-                    @if (reserva.estado === 'PENDIENTE') {
-                      <span class="status" style="background-color: #F39C12; color: white;">
-                        <i class="fa-solid fa-clock"></i> Pendiente
+                    <!-- ==================== BADGES DE ESTADO ==================== -->
+                    <!-- PENDIENTE tiene dos sub-estados según pagoEstado del backend:
+                         PENDIENTE  → usuario aún no completó el pago en Stripe
+                         AUTORIZADO → pago autorizado, esperando al anfitrión          -->
+
+                    @if (reserva.estado === 'PENDIENTE' && reserva.pagoEstado === 'PENDIENTE') {
+                      <span class="status pending-payment">
+                        <i class="fa-solid fa-credit-card"></i> Pendiente de Pago
+                      </span>
+                    }
+                    @if (reserva.estado === 'PENDIENTE' && reserva.pagoEstado !== 'PENDIENTE') {
+                      <span class="status pending">
+                        <i class="fa-solid fa-clock"></i> Pendiente Aprobación
                       </span>
                     }
                     @if (reserva.estado === 'CONFIRMADA') {
@@ -121,17 +130,19 @@
                       <i class="fa-solid fa-eye"></i> Ver Alojamiento
                     </a>
 
-                    <button
-                      type="button"
-                      (click)="cancelarReserva(reserva.id, reserva.alojamiento.titulo)"
-                      class="btn btn-danger btn-small">
-                      <i class="fa-solid fa-times"></i> Cancelar Reserva
-                    </button>
+                    <!-- Cancelar solo mientras está PENDIENTE (cualquier sub-estado) -->
+                    @if (reserva.estado === 'PENDIENTE') {
+                      <button
+                        type="button"
+                        (click)="cancelarReserva(reserva.id, reserva.alojamiento.titulo)"
+                        class="btn btn-danger btn-small">
+                        <i class="fa-solid fa-times"></i> Cancelar Reserva
+                      </button>
+                    }
                   </div>
                 </div>
               }
             } @else {
-              <!-- Estado Vacío -->
               <div class="empty-state">
                 <i class="fa-solid fa-calendar-xmark"></i>
                 <h3>No tienes reservas activas</h3>
@@ -151,12 +162,10 @@
               @for (reserva of reservasPasadas; track reserva.id) {
                 <div class="reservation-card">
 
-                  <!-- Imagen del Alojamiento -->
                   <img
                     [src]="reserva.alojamiento.imagenes[0]"
                     [alt]="reserva.alojamiento.titulo">
 
-                  <!-- Detalles de la Reserva -->
                   <div class="reservation-details">
                     <h4>{{ reserva.alojamiento.titulo }}</h4>
 
@@ -190,15 +199,11 @@
                     </p>
                   </div>
 
-                  <!-- Acciones -->
                   <div class="reservation-actions">
-
-                    <!-- Estado -->
                     <span class="status completed">
                       <i class="fa-solid fa-flag-checkered"></i> Completada
                     </span>
 
-                    <!-- Botones -->
                     <a
                       [routerLink]="['/alojamiento', reserva.alojamiento.id]"
                       class="btn btn-secondary btn-small">
@@ -215,7 +220,6 @@
                 </div>
               }
             } @else {
-              <!-- Estado Vacío -->
               <div class="empty-state">
                 <i class="fa-solid fa-clock-rotate-left"></i>
                 <h3>No tienes reservas pasadas</h3>
@@ -232,12 +236,10 @@
               @for (reserva of reservasCanceladas; track reserva.id) {
                 <div class="reservation-card" style="opacity: 0.8;">
 
-                  <!-- Imagen del Alojamiento -->
                   <img
                     [src]="reserva.alojamiento.imagenes[0]"
                     [alt]="reserva.alojamiento.titulo">
 
-                  <!-- Detalles de la Reserva -->
                   <div class="reservation-details">
                     <h4>{{ reserva.alojamiento.titulo }}</h4>
 
@@ -253,6 +255,7 @@
                         <i class="fa-solid fa-comment"></i>
                       </a>
                     </p>
+
                     <p>
                       <i class="fa-solid fa-calendar"></i>
                       {{ fechaService.formatearFechaCompleta(reserva.fechaEntrada) }} - {{ fechaService.formatearFechaCompleta(reserva.fechaSalida) }}
@@ -270,15 +273,11 @@
                     </p>
                   </div>
 
-                  <!-- Acciones -->
                   <div class="reservation-actions">
-
-                    <!-- Estado -->
                     <span class="status cancelled">
                       <i class="fa-solid fa-ban"></i> Cancelada
                     </span>
 
-                    <!-- Botones -->
                     <a
                       [routerLink]="['/alojamiento', reserva.alojamiento.id]"
                       class="btn btn-secondary btn-small">
@@ -288,7 +287,6 @@
                 </div>
               }
             } @else {
-              <!-- Estado Vacío -->
               <div class="empty-state">
                 <i class="fa-solid fa-circle-check"></i>
                 <h3>No tienes reservas canceladas</h3>
