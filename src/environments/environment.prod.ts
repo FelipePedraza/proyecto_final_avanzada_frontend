@@ -8,10 +8,10 @@ export const environment = {
   wsUrl: 'https://tu-dominio.com/ws',
 
   // Mapbox
-  mapboxToken: 'pk.eyJ1IjoicGVkcmF6YTgzMCIsImEiOiJjbWg5OTQ0MjMxY2F6MmpxNmVibG5pc2V2In0.VrZ9nEk-zYTfqaUrE2rWwg',
+  mapboxToken: 'MAP_TOKEN_PROD',
 
   // Stripe
-  stripePublicKey: 'whsec_jXEENSBLHgxIMsLHi7FmVoUVYLsivmEF',
+  stripePublicKey: 'STRIPE_PUBLIC_KEY_PROD',
 
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
