@@ -21,11 +21,13 @@ import { FechaService } from '../../services/fecha-service';
 import { PrecioService } from '../../services/precio-service';
 import { CalificacionService } from '../../services/calificacion-service';
 // DTOs
-import {AlojamientoDTO, MetricasDTO} from '../../models/alojamiento-dto';
-import {CreacionRespuestaDTO, ItemResenaDTO} from '../../models/resena-dto';
-import {CreacionReservaDTO, ItemReservaDTO, ReservaEstado} from '../../models/reserva-dto';
-import {MarcadorDTO} from '../../models/marcador-dto';
-import {UsuarioDTO} from '../../models/usuario-dto';
+import { AlojamientoDTO, MetricasDTO } from '../../models/alojamiento-dto';
+import { CreacionRespuestaDTO, ItemResenaDTO } from '../../models/resena-dto';
+import { CreacionReservaDTO, ItemReservaDTO, ReservaEstado, CreacionReservaRespuestaDTO } from '../../models/reserva-dto';
+import { MarcadorDTO } from '../../models/marcador-dto';
+import { UsuarioDTO } from '../../models/usuario-dto';
+// Componente de pago
+import { ModalPago } from '../../components/modal-pago/modal-pago';
 
 const CALENDAR_COLORS = {
   confirmada: {
@@ -36,7 +38,7 @@ const CALENDAR_COLORS = {
 
 @Component({
   selector: 'app-detalle-alojamiento',
-  imports: [CommonModule, ReactiveFormsModule, CalendarModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, CalendarModule, RouterLink, ModalPago],
   templateUrl: './detalle-alojamiento.html',
   styleUrl: './detalle-alojamiento.css'
 })
@@ -78,6 +80,10 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   // Verificación de anfitrión propietario
   esAnfitrionPropietario: boolean = false;
+
+  // ==================== PAGO (NUEVO) ====================
+  mostrarModalPago: boolean = false;
+  datosPago: { clientSecret: string; reservaId: number; monto: number } | null = null;
 
   // Subject para cancelar subscripciones
   private destroy$ = new Subject<void>();
@@ -142,7 +148,6 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       cantidadHuespedes: [1, [Validators.required, Validators.min(1)]]
     });
 
-    // Configurar cálculo de precio
     this.reservaForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -184,10 +189,8 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
               this.mensajeHandlerService.showError(mensaje);
             }
           });
-          // Verificar si el usuario es el anfitrión propietario
           this.verificarPropietario();
 
-          // Validar capacidad máxima en el formulario
           this.reservaForm.get('cantidadHuespedes')?.setValidators([
             Validators.required,
             Validators.min(1),
@@ -210,20 +213,12 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       });
   }
 
-  // Verificar si el usuario actual es el propietario
   private verificarPropietario(): void {
     if (!this.tokenService.isLogged() || !this.alojamiento) {
       this.esAnfitrionPropietario = false;
       return;
     }
-    if(this.anfitiron?.id === this.tokenService.getUserId()) {
-      this.esAnfitrionPropietario = true;
-      return;
-    }
-    else {
-      this.esAnfitrionPropietario = false;
-      return;
-    }
+    this.esAnfitrionPropietario = this.anfitiron?.id === this.tokenService.getUserId();
   }
 
   private inicializarLogicaMapa(): void {
@@ -285,7 +280,6 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       });
   }
 
-  // [NUEVO] Responder a una reseña
   responderResena(resena: ItemResenaDTO): void {
     Swal.fire({
       title: 'Responder Reseña',
@@ -301,14 +295,13 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
             "${resena.comentario}"
           </p>
         </div>
-
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark-green); text-align: left;">
           Tu Respuesta *
         </label>
         <textarea
           id="respuesta-mensaje"
           placeholder="Escribe tu respuesta al huésped..."
-          style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;); resize: vertical;"
+          style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px; resize: vertical;"
           maxlength="500"></textarea>
         <p style="text-align: right; font-size: 0.85rem; color: #7F8C8D; margin-top: 0.5rem;">
           <span id="char-count">0</span>/500
@@ -323,26 +316,20 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       didOpen: () => {
         const textarea = document.getElementById('respuesta-mensaje') as HTMLTextAreaElement;
         const charCount = document.getElementById('char-count');
-
         textarea?.addEventListener('input', () => {
-          if (charCount) {
-            charCount.textContent = textarea.value.length.toString();
-          }
+          if (charCount) charCount.textContent = textarea.value.length.toString();
         });
       },
       preConfirm: () => {
         const mensaje = (document.getElementById('respuesta-mensaje') as HTMLTextAreaElement).value;
-
         if (!mensaje || mensaje.trim().length < 10) {
           Swal.showValidationMessage('La respuesta debe tener al menos 10 caracteres');
           return false;
         }
-
         if (mensaje.length > 500) {
           Swal.showValidationMessage('La respuesta no puede exceder 500 caracteres');
           return false;
         }
-
         return { mensaje: mensaje.trim() };
       }
     }).then((result) => {
@@ -354,16 +341,12 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   private procesarRespuesta(idResena: number, mensaje: string): void {
     this.mensajeHandlerService.showLoading('Publicando respuesta...')
-
     const dto: CreacionRespuestaDTO = { mensaje };
-
     this.alojamientoService.responderResena(this.idAlojamiento, idResena, dto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.mensajeHandlerService.showSuccess('Tu respuesta ha sido publicada exitosamente', '¡Respuesta publicada!')
-
-          // Recargar reseñas para mostrar la respuesta
           this.recargarResenas();
         },
         error: (error) => {
@@ -410,6 +393,7 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       return;
     }
 
+    // Mostrar resumen antes de pagar
     Swal.fire({
       title: '¿Confirmar reserva?',
       html: `
@@ -420,11 +404,15 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
           <p><strong>Huéspedes:</strong> ${this.reservaForm.value.cantidadHuespedes}</p>
           <hr>
           <p><strong>Total:</strong> ${this.precioService.formatearPrecio(this.precioTotal)}</p>
+          <p style="margin-top: 1rem; font-size: 0.9rem; color: #7F8C8D;">
+            <i class="fa-solid fa-info-circle"></i>
+            Solo se <strong>autorizará</strong> el cargo ahora. El cobro se efectúa cuando el anfitrión confirme.
+          </p>
         </div>
       `,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'Confirmar y pagar',
+      confirmButtonText: 'Continuar al pago',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#2e8b57',
       cancelButtonColor: '#95a5a6'
@@ -444,7 +432,7 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       return;
     }
 
-    this.mensajeHandlerService.showLoading('Estamos procesando tu reserva')
+    this.mensajeHandlerService.showLoading('Creando tu reserva...');
 
     const creacionReservaDTO: CreacionReservaDTO = {
       alojamientoId: this.idAlojamiento,
@@ -459,9 +447,35 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       .subscribe({
         next: (respuesta) => {
           this.mensajeHandlerService.closeModal();
-          this.mensajeHandlerService.showSuccessWithCallback(respuesta.data, '¡Reserva exitosa!',() => {
-            this.router.navigate(['/mis-reservas']).then(r => window.location.reload());
-          });
+
+          // El backend puede devolver el DTO como objeto o como JSON string
+          // (dependiendo de si el controlador ya cambió a RespuestaDTO<RespuestaCreacionReservaDTO>
+          // o todavía usa RespuestaDTO<String>)
+          let datos: CreacionReservaRespuestaDTO;
+          if (typeof respuesta.data === 'string') {
+            try {
+              datos = JSON.parse(respuesta.data);
+            } catch {
+              this.mensajeHandlerService.showError('Error al procesar la respuesta del servidor.');
+              return;
+            }
+          } else {
+            datos = respuesta.data as CreacionReservaRespuestaDTO;
+          }
+
+          if (!datos?.pago || !datos?.reservaId || !datos?.precioTotal) {
+            this.mensajeHandlerService.showError(
+              'El servidor no devolvió los datos de pago. Verifica la configuración del backend.'
+            );
+            return;
+          }
+
+          this.datosPago = {
+            clientSecret: datos.pago.clientSecret,
+            reservaId: datos.reservaId,
+            monto: datos.precioTotal
+          };
+          this.mostrarModalPago = true;
         },
         error: (error) => {
           this.mensajeHandlerService.closeModal();
@@ -470,6 +484,28 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
         }
       });
   }
+
+  // ==================== CALLBACKS DEL MODAL DE PAGO ====================
+
+  onPagoExitoso(reservaId: number): void {
+    this.mostrarModalPago = false;
+    this.datosPago = null;
+    this.mensajeHandlerService.showSuccessWithCallback(
+      'Tu pago fue autorizado. El anfitrión revisará tu solicitud y recibirás una notificación.',
+      '¡Pago Autorizado!',
+      () => this.router.navigate(['/mis-reservas'])
+    );
+  }
+
+  onPagoCancelado(): void {
+    this.mostrarModalPago = false;
+    this.datosPago = null;
+    this.mensajeHandlerService.showWarning(
+      'Pago cancelado. Tu reserva no ha sido confirmada. Puedes intentarlo desde "Mis Reservas".'
+    );
+  }
+
+  // ==================== PRECIO ====================
 
   private calcularPrecioTotal(): void {
     if (!this.alojamiento) return;
@@ -496,35 +532,31 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   mesAnterior(): void {
     this.viewDate = subMonths(this.viewDate, 1);
-    this.confirmarMesActual()
+    this.confirmarMesActual();
   }
 
   mesSiguiente(): void {
     this.viewDate = addMonths(this.viewDate, 1);
-    this.confirmarMesActual()
+    this.confirmarMesActual();
   }
 
   hoy(): void {
     this.viewDate = new Date();
-    this.confirmarMesActual()
+    this.confirmarMesActual();
   }
 
   seleccionarDiaCalendario(day: CalendarMonthViewDay): void {
     const clickedDate = day.date;
-    // normalizo la fecha para comparar (sin horas)
     const clicked = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), clickedDate.getDate());
 
     const entradaVal = this.reservaForm.get('fechaEntrada')?.value;
     const salidaVal = this.reservaForm.get('fechaSalida')?.value;
 
-    // Si el usuario nunca seleccionó manualmente (bandera true), fijamos entrada
     if (this.seleccionandoEntrada || !entradaVal) {
       const nuevaEntradaStr = this.fechaService.formatearParaInput(clicked);
-      // Si la nueva entrada es igual o posterior a la salida actual, la dejamos (o reseteamos la salida)
       if (salidaVal) {
         const salidaDate = new Date(salidaVal + 'T00:00:00');
         if (clicked >= new Date(salidaDate.getFullYear(), salidaDate.getMonth(), salidaDate.getDate())) {
-          // Si el usuario selecciona entrada >= salida actual, reseteamos la salida (para obligar a elegir otra)
           this.reservaForm.patchValue({ fechaEntrada: nuevaEntradaStr, fechaSalida: null });
         } else {
           this.reservaForm.patchValue({ fechaEntrada: nuevaEntradaStr });
@@ -532,34 +564,24 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
       } else {
         this.reservaForm.patchValue({ fechaEntrada: nuevaEntradaStr, fechaSalida: null });
       }
-
-      // ahora el siguiente click será para la salida
       this.seleccionandoEntrada = false;
     } else {
-      // estamos seleccionando salida
       const nuevaSalidaStr = this.fechaService.formatearParaInput(clicked);
-
-      // Asegurarnos que la salida sea posterior a la entrada
       const entradaDate = new Date((this.reservaForm.get('fechaEntrada')?.value || '') + 'T00:00:00');
       const entradaNormal = new Date(entradaDate.getFullYear(), entradaDate.getMonth(), entradaDate.getDate());
 
       if (!entradaVal) {
-        // si por alguna razón no hay entrada, tratar este click como entrada
         this.reservaForm.patchValue({ fechaEntrada: nuevaSalidaStr, fechaSalida: null });
         this.seleccionandoEntrada = false;
       } else if (clicked <= entradaNormal) {
-        // Si el usuario hizo click en una fecha anterior o igual a la entrada -> reemplazamos la entrada y seguimos seleccionando salida
         this.reservaForm.patchValue({ fechaEntrada: nuevaSalidaStr, fechaSalida: null });
-        this.seleccionandoEntrada = false; // seguirá seleccionando salida en siguiente click
+        this.seleccionandoEntrada = false;
       } else {
-        // click válido para salida
         this.reservaForm.patchValue({ fechaSalida: nuevaSalidaStr });
-        // opcional: resetear para que el siguiente click vuelva a fijar la entrada
         this.seleccionandoEntrada = true;
       }
     }
 
-    // marcar y recalcular
     this.reservaForm.get('fechaEntrada')?.markAsTouched();
     this.reservaForm.get('fechaSalida')?.markAsTouched();
     this.reservaForm.updateValueAndValidity();
@@ -568,25 +590,20 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   private confirmarMesActual() {
     const hoy = new Date();
-    // Comparamos año y mes. Si son iguales, no debe retroceder.
     const mismoMes = this.viewDate.getMonth() === hoy.getMonth();
     const mismoAnio = this.viewDate.getFullYear() === hoy.getFullYear();
-
     this.mesActual = mismoMes && mismoAnio;
   }
 
   private actualizarEventosCalendario(): void {
-
     this.events = this.reservasConfirmadas.map((reserva: ItemReservaDTO): CalendarEvent => {
       let color = CALENDAR_COLORS.confirmada;
-      let cssClass = 'cal-event-confirmed';
-
       return {
         title: reserva.alojamiento.titulo,
         start: startOfDay(this.toLocalDate(reserva.fechaEntrada)),
         end: endOfDay(this.toLocalDate(reserva.fechaSalida)),
         color: { ...color },
-        cssClass: cssClass,
+        cssClass: 'cal-event-confirmed',
         meta: { id: reserva.id }
       };
     });
@@ -606,11 +623,9 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
   cambiarImagenPrincipal(imagen: string): void {
     const imagenAnterior = this.imagenPrincipal;
     this.imagenPrincipal = imagen;
-
     const index = this.imagenesGaleria.indexOf(imagen);
     if (index !== -1) {
       this.imagenesGaleria[index] = imagenAnterior;
     }
   }
-
 }

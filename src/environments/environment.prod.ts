@@ -10,6 +10,9 @@ export const environment = {
   // Mapbox
   mapboxToken: 'pk.eyJ1IjoicGVkcmF6YTgzMCIsImEiOiJjbWg5OTQ0MjMxY2F6MmpxNmVibG5pc2V2In0.VrZ9nEk-zYTfqaUrE2rWwg',
 
+  // Stripe
+  stripePublicKey: 'whsec_jXEENSBLHgxIMsLHi7FmVoUVYLsivmEF',
+
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
   wsMaxReconnectAttempts: 3,
