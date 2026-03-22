@@ -376,15 +376,15 @@
                   <div class="form-group full-width">
                     <label>Documento Legal Registrado</label>
                     @if (anfitrionInfo.documentoLegal) {
-                    <div style="padding: 1rem; background: var(--light-green); border-radius: 12px; display: flex; align-items: center; gap: 10px;">
-                      <i class="fa-solid fa-file-pdf" style="color: var(--primary-color);"></i>
-                      <strong>Documento Verificado</strong>
-                    </div>
-                  } @else {
-                    <p style="color: var(--text-color); margin-top: 0.5rem;">
-                      No se encontró ningún documento verificado.
-                    </p>
-                  }
+                      <div style="padding: 1rem; background: var(--light-green); border-radius: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-file-pdf" style="color: var(--primary-color);"></i>
+                        <strong>Documento Verificado</strong>
+                      </div>
+                    } @else {
+                      <p style="color: var(--text-color); margin-top: 0.5rem;">
+                        No se encontró ningún documento verificado.
+                      </p>
+                    }
                   </div>
                 </div>
               } @else if (!cargandoAnfitrion && !anfitrionInfo) {

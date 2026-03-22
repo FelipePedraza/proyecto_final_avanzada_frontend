@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink} from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { PanelUsuario } from '../../components/panel-usuario/panel-usuario';
@@ -11,6 +11,7 @@ import { ReservaService } from '../../services/reserva-service';
 import { TokenService } from '../../services/token-service';
 import { UsuarioService } from '../../services/usuario-service';
 import { ItemReservaDTO, ReservaEstado } from '../../models/reserva-dto';
+import { PagoEstado } from '../../models/pago-dto';
 import { MensajeHandlerService } from '../../services/mensajeHandler-service';
 import { FechaService } from '../../services/fecha-service';
 import { PrecioService } from '../../services/precio-service';
@@ -59,7 +60,7 @@ export class MisReservas implements OnInit, OnDestroy {
   private cargarReservas(): void {
     const usuarioId = this.tokenService.getUserId();
     if (!usuarioId) {
-      this.mensajeHandlerService.showError('No se pudo identificar al usuario')
+      this.mensajeHandlerService.showError('No se pudo identificar al usuario');
       return;
     }
 
@@ -87,9 +88,12 @@ export class MisReservas implements OnInit, OnDestroy {
     hoy.setHours(0, 0, 0, 0);
 
     // Activas: PENDIENTE o CONFIRMADA con fecha futura
+    // PENDIENTE abarca dos sub-estados (via pagoEstado):
+    //   pagoEstado=PENDIENTE  → usuario aún no completó el pago
+    //   pagoEstado=AUTORIZADO → pago OK, esperando aprobación del anfitrión
     this.reservasActivas = reservas.filter(r =>
-      (r.estado === ReservaEstado.PENDIENTE || r.estado === ReservaEstado.CONFIRMADA) &&
-      new Date(r.fechaSalida) >= hoy
+      (r.estado === ReservaEstado.PENDIENTE ||
+        (r.estado === ReservaEstado.CONFIRMADA && new Date(r.fechaSalida) >= hoy))
     ).sort((a, b) => new Date(a.fechaEntrada).getTime() - new Date(b.fechaEntrada).getTime());
 
     // Pasadas: COMPLETADA o CONFIRMADA con fecha pasada
@@ -119,16 +123,14 @@ export class MisReservas implements OnInit, OnDestroy {
   }
 
   private procesarCancelacion(idReserva: number): void {
-
     this.mensajeHandlerService.showLoading('Procesando...');
-
 
     this.reservaService.cancelar(idReserva)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.mensajeHandlerService.showSuccess('Tu reserva ha sido cancelada exitosamente','Reserva cancelada');
-          this.cargarReservas(); // Recargar las reservas
+          this.mensajeHandlerService.showSuccess('Tu reserva ha sido cancelada exitosamente', 'Reserva cancelada');
+          this.cargarReservas();
         },
         error: (error) => {
           this.mensajeHandlerService.closeModal();
@@ -146,7 +148,6 @@ export class MisReservas implements OnInit, OnDestroy {
           <p style="color: var(--text-color); margin-bottom: 1rem;">
             <strong>${tituloAlojamiento}</strong>
           </p>
-
           <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark-green);">
             Calificación *
           </label>
@@ -157,14 +158,13 @@ export class MisReservas implements OnInit, OnDestroy {
             <i class="fa-solid fa-star" data-rating="4" style="font-size: 2rem; color: #ddd; cursor: pointer;"></i>
             <i class="fa-solid fa-star" data-rating="5" style="font-size: 2rem; color: #ddd; cursor: pointer;"></i>
           </div>
-
           <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark-green);">
             Comentario *
           </label>
           <textarea
             id="review-comment"
             placeholder="Cuéntanos sobre tu experiencia..."
-            style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;); resize: vertical;"
+            style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px; resize: vertical;"
             maxlength="500"></textarea>
           <p style="text-align: right; font-size: 0.85rem; color: #7F8C8D; margin-top: 0.5rem;">
             <span id="char-count">0</span>/500
@@ -179,60 +179,38 @@ export class MisReservas implements OnInit, OnDestroy {
       width: '600px',
       didOpen: () => {
         let selectedRating = 0;
-
-        // Manejar selección de estrellas
         const stars = document.querySelectorAll('#rating-stars i');
+
         stars.forEach(star => {
           star.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
             selectedRating = parseInt(target.getAttribute('data-rating') || '0');
-
-            // Actualizar estrellas visualmente
             stars.forEach((s, index) => {
-              if (index < selectedRating) {
-                (s as HTMLElement).style.color = '#F39C12';
-              } else {
-                (s as HTMLElement).style.color = '#ddd';
-              }
+              (s as HTMLElement).style.color = index < selectedRating ? '#F39C12' : '#ddd';
             });
           });
 
-          // Hover effect
           star.addEventListener('mouseenter', (e) => {
             const target = e.target as HTMLElement;
             const rating = parseInt(target.getAttribute('data-rating') || '0');
             stars.forEach((s, index) => {
-              if (index < rating) {
-                (s as HTMLElement).style.color = '#F39C12';
-              } else {
-                (s as HTMLElement).style.color = '#ddd';
-              }
+              (s as HTMLElement).style.color = index < rating ? '#F39C12' : '#ddd';
             });
           });
         });
 
-        // Restaurar selección al salir del hover
         document.getElementById('rating-stars')?.addEventListener('mouseleave', () => {
           stars.forEach((s, index) => {
-            if (index < selectedRating) {
-              (s as HTMLElement).style.color = '#F39C12';
-            } else {
-              (s as HTMLElement).style.color = '#ddd';
-            }
+            (s as HTMLElement).style.color = index < selectedRating ? '#F39C12' : '#ddd';
           });
         });
 
-        // Contador de caracteres
         const textarea = document.getElementById('review-comment') as HTMLTextAreaElement;
         const charCount = document.getElementById('char-count');
-
         textarea?.addEventListener('input', () => {
-          if (charCount) {
-            charCount.textContent = textarea.value.length.toString();
-          }
+          if (charCount) charCount.textContent = textarea.value.length.toString();
         });
 
-        // Guardar rating en el input oculto
         (Swal.getPopup() as any).selectedRating = () => selectedRating;
       },
       preConfirm: () => {
@@ -243,17 +221,14 @@ export class MisReservas implements OnInit, OnDestroy {
           Swal.showValidationMessage('Por favor selecciona una calificación');
           return false;
         }
-
         if (!comment || comment.trim().length < 10) {
           Swal.showValidationMessage('El comentario debe tener al menos 10 caracteres');
           return false;
         }
-
         if (comment.length > 500) {
           Swal.showValidationMessage('El comentario no puede exceder 500 caracteres');
           return false;
         }
-
         return { rating, comment: comment.trim() };
       }
     }).then((result) => {
@@ -264,19 +239,13 @@ export class MisReservas implements OnInit, OnDestroy {
   }
 
   private procesarResena(idAlojamiento: number, calificacion: number, comentario: string): void {
-
     this.mensajeHandlerService.showLoading('Procesando...');
 
-    const resenaDTO = {
-      calificacion,
-      comentario
-    };
-
-    this.alojamientoService.crearResena(idAlojamiento, resenaDTO)
+    this.alojamientoService.crearResena(idAlojamiento, { calificacion, comentario })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.mensajeHandlerService.showSuccess('Tu reseña ha sido publicada exitosamente', '¡Reseña publicada!')
+          this.mensajeHandlerService.showSuccess('Tu reseña ha sido publicada exitosamente', '¡Reseña publicada!');
         },
         error: (error) => {
           this.mensajeHandlerService.closeModal();

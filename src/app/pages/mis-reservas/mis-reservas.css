@@ -133,6 +133,18 @@
   justify-content: center;
 }
 
+/* Pendiente de pago (naranja) — el usuario aún no ha pagado */
+.status.pending-payment {
+  background-color: #E67E22;
+  color: white;
+}
+
+/* Pendiente de aprobación (amarillo) — pago OK, esperando anfitrión */
+.status.pending {
+  background-color: #F39C12;
+  color: white;
+}
+
 .status.confirmed {
   background-color: var(--success-color);
   color: white;

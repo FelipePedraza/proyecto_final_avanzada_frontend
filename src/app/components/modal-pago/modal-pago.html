@@ -1,0 +1,149 @@
+<!-- Overlay del modal -->
+<div class="modal-overlay" (click)="cancelar()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <!-- ==================== ESTADO: PAGO EXITOSO ==================== -->
+    @if (pagoCompletadoLocal) {
+      <div class="pago-exitoso">
+        <div class="success-icon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h2>¡Pago Autorizado!</h2>
+        <p>Tu pago ha sido procesado correctamente.</p>
+        <p class="success-sub">
+          Tu reserva está <strong>pendiente de confirmación</strong> por el anfitrión.
+          Te notificaremos por correo cuando sea aceptada.
+        </p>
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="redirect-text">Redirigiendo a tus reservas...</p>
+      </div>
+    }
+
+    <!-- ==================== ESTADO: FORMULARIO DE PAGO ==================== -->
+    @if (!pagoCompletadoLocal) {
+
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="modal-title">
+          <div class="logo-small">
+            <i class="fa-solid fa-house-chimney"></i>
+          </div>
+          <h2>Completar Reserva</h2>
+        </div>
+        <button type="button" class="btn-cerrar" (click)="cancelar()" [disabled]="procesandoPago">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Resumen de la reserva -->
+      <div class="resumen-reserva">
+        <div class="resumen-titulo">
+          <i class="fa-solid fa-house"></i>
+          <strong>{{ nombreAlojamiento }}</strong>
+        </div>
+        <div class="resumen-fechas">
+          <div class="fecha-item">
+            <span class="fecha-label">Check-in</span>
+            <span class="fecha-valor">{{ fechaEntrada }}</span>
+          </div>
+          <div class="fecha-separador">
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+          <div class="fecha-item">
+            <span class="fecha-label">Check-out</span>
+            <span class="fecha-valor">{{ fechaSalida }}</span>
+          </div>
+        </div>
+        <div class="resumen-precio">
+          <div class="precio-desglose">
+            <span>{{ precioService.formatearPrecio(monto / noches) }} × {{ noches }} noche{{ noches > 1 ? 's' : '' }}</span>
+            <span class="precio-total-label">Total a autorizar</span>
+          </div>
+          <div class="precio-valor">
+            {{ precioService.formatearPrecio(monto) }}
+          </div>
+        </div>
+        <div class="aviso-autorizacion">
+          <i class="fa-solid fa-info-circle"></i>
+          <span>
+            Solo se <strong>autorizará</strong> el cargo ahora. El cobro efectivo ocurre
+            cuando el anfitrión confirme tu reserva.
+          </span>
+        </div>
+      </div>
+
+      <!-- Formulario de Stripe -->
+      <div class="stripe-form-section">
+        <h3 class="stripe-form-titulo">
+          <i class="fa-solid fa-credit-card"></i>
+          Información de pago
+        </h3>
+
+        <!-- Spinner mientras carga Stripe -->
+        @if (cargandoStripe) {
+          <div class="stripe-loading">
+            <div class="stripe-spinner"></div>
+            <p>Cargando formulario de pago seguro...</p>
+          </div>
+        }
+
+        <!-- Contenedor donde Stripe monta el Payment Element -->
+        <div
+          id="stripe-payment-element"
+          [class.oculto]="cargandoStripe">
+        </div>
+
+        <!-- Error de pago -->
+        @if (errorPago) {
+          <div class="error-pago">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            {{ errorPago }}
+          </div>
+        }
+      </div>
+
+      <!-- Footer con botones -->
+      <div class="modal-footer">
+        <div class="seguridad-badges">
+          <span class="badge-seguro">
+            <i class="fa-solid fa-lock"></i> Pago seguro con Stripe
+          </span>
+          <span class="badge-seguro">
+            <i class="fa-brands fa-cc-visa"></i>
+          </span>
+          <span class="badge-seguro">
+            <i class="fa-brands fa-cc-mastercard"></i>
+          </span>
+        </div>
+
+        <div class="botones-accion">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="cancelar()"
+            [disabled]="procesandoPago">
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-pagar"
+            (click)="confirmarPago()"
+            [disabled]="procesandoPago || cargandoStripe">
+
+            @if (procesandoPago) {
+              <span class="spinner-btn"></span>
+              Procesando...
+            } @else {
+              <i class="fa-solid fa-lock"></i>
+              Pagar {{ precioService.formatearPrecio(monto) }}
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

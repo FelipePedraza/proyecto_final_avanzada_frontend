@@ -172,7 +172,7 @@ export class EditarPerfil implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (respuesta) => {
-            this.anfitrionInfo = respuesta.data;
+          this.anfitrionInfo = respuesta.data;
         },
         error: (error) => {
           const mensaje = this.mensajeHandlerService.handleHttpError(error);

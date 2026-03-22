@@ -91,14 +91,14 @@
             <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-color);">
               <i class="fa-solid fa-user"></i>
               <strong>
-              <a
-                [routerLink]="['/chat']"
-                [queryParams]="{destinatarioId: alojamiento.anfitrionId}"
-                class="enlace-mensaje-huesped"
-                title="Enviar mensaje a {{ alojamiento.nombreAnfitrion }}">
-                {{ alojamiento.nombreAnfitrion }}
-                <i class="fa-solid fa-comment"></i>
-              </a>
+                <a
+                  [routerLink]="['/chat']"
+                  [queryParams]="{destinatarioId: alojamiento.anfitrionId}"
+                  class="enlace-mensaje-huesped"
+                  title="Enviar mensaje a {{ alojamiento.nombreAnfitrion }}">
+                  {{ alojamiento.nombreAnfitrion }}
+                  <i class="fa-solid fa-comment"></i>
+                </a>
               </strong>
             </p>
           </div>
@@ -189,6 +189,7 @@
         </div>
 
         <hr>
+
         <!-- Sección de Reseñas -->
         <div class="reviews-section">
           <h3>
@@ -221,7 +222,6 @@
 
                   <p>{{ resena.comentario }}</p>
 
-                  <!-- [NUEVO] Mostrar respuesta del anfitrión si existe -->
                   @if (resena.respuesta) {
                     <div class="host-response">
                       <div class="host-response-header">
@@ -235,8 +235,7 @@
                     </div>
                   }
 
-                  <!-- [NUEVO] Botón para responder (solo si es anfitrión propietario y no hay respuesta) -->
-                  @if (esAnfitrionPropietario && !resena.respuesta && tokenService.isLogged() ) {
+                  @if (esAnfitrionPropietario && !resena.respuesta && tokenService.isLogged()) {
                     <div style="margin-top: 1rem;">
                       <button
                         type="button"
@@ -339,14 +338,14 @@
             type="submit"
             class="btn btn-primary btn-block"
             [disabled]="reservaForm.invalid">
-            <i class="fa-solid fa-calendar-check"></i> Reservar ahora
+            <i class="fa-solid fa-lock"></i> Reservar y pagar
           </button>
         </form>
 
         <!-- Desglose de Precio -->
         <div class="price-breakdown">
           <p style="text-align: center; color: #7F8C8D; margin-bottom: 1.5rem; font-size: 0.9rem;">
-            <i class="fa-solid fa-info-circle"></i> No se te cobrará nada aún
+            <i class="fa-solid fa-info-circle"></i> Solo se autorizará el cargo al reservar
           </p>
 
           @if (numeroNoches > 0) {
@@ -371,4 +370,19 @@
 
     </div>
   </main>
+}
+
+<!-- ==================== MODAL DE PAGO STRIPE ==================== -->
+@if (mostrarModalPago && datosPago) {
+  <app-modal-pago
+    [clientSecret]="datosPago.clientSecret"
+    [reservaId]="datosPago.reservaId"
+    [monto]="datosPago.monto"
+    [nombreAlojamiento]="alojamiento?.titulo || ''"
+    [fechaEntrada]="reservaForm.value.fechaEntrada"
+    [fechaSalida]="reservaForm.value.fechaSalida"
+    [noches]="numeroNoches"
+    (pagoExitoso)="onPagoExitoso($event)"
+    (pagoCancelado)="onPagoCancelado()">
+  </app-modal-pago>
 }
