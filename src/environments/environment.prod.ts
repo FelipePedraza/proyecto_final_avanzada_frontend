@@ -2,10 +2,10 @@ export const environment = {
   production: true,
 
   // URL base del backend
-  apiUrl: 'https://vivigo-env.eba-mufjwmzj.us-east-2.elasticbeanstalk.com/api',
+  apiUrl: 'https://vivigo-env-1.eba-mufjwmzj.us-east-2.elasticbeanstalk.com/api',
 
   // WebSocket
-  wsUrl: 'https://vivigo-env.eba-mufjwmzj.us-east-2.elasticbeanstalk.com/ws',
+  wsUrl: 'https://vivigo-env-1.eba-mufjwmzj.us-east-2.elasticbeanstalk.com/ws',
 
   // Mapbox
   mapboxToken: (window as any).__env?.mapboxToken,
