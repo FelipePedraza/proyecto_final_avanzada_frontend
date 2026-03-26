@@ -4,9 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { PanelUsuario } from '../../components/panel-usuario/panel-usuario';
+import { Paginacion } from '../../components/paginacion/paginacion';
 
 //DTO
 import { ItemAlojamientoDTO, MetricasDTO } from '../../models/alojamiento-dto';
+import { PaginationMetadata } from '../../models/pagination-dto';
 
 //Servicios
 import { UsuarioService } from '../../services/usuario-service';
@@ -18,7 +20,7 @@ import { PrecioService } from '../../services/precio-service';
 
 @Component({
   selector: 'app-mis-alojamientos',
-  imports: [ PanelUsuario, CommonModule, FormsModule, RouterLink],
+  imports: [ PanelUsuario, CommonModule, FormsModule, RouterLink, Paginacion],
   templateUrl: './mis-alojamientos.html',
   styleUrl: './mis-alojamientos.css'
 })
@@ -31,6 +33,8 @@ export class MisAlojamientos implements OnDestroy, OnInit {
   cargando: boolean = false;
   metricasPorAlojamiento: Map<number, MetricasDTO> = new Map();
   paginaActual: number = 0;
+  metadataPaginacion: PaginationMetadata | null = null;
+  readonly TAMANO_PAGINA = 5;
   private destroy$ = new Subject<void>();
 
   // ==================== CONSTRUCTOR ====================
@@ -95,27 +99,52 @@ export class MisAlojamientos implements OnDestroy, OnInit {
   }
 
   /**
-   * Carga más alojamientos (paginación)
+   * Cambia a una página específica (navegación por páginas numéricas)
    */
-  cargarMasAlojamientos(): void {
+  onPageChange(nuevaPagina: number): void {
+    if (this.cargando || nuevaPagina === this.paginaActual) return;
+
+    this.paginaActual = nuevaPagina;
+    this.cargarPaginaAlojamientos();
+  }
+
+  /**
+   * Cambia el tamaño de página y recarga
+   */
+  onPageSizeChange(nuevoTamano: number): void {
+    this.paginaActual = 0;
+    // El tamaño de página se maneja automáticamente por el componente de paginación
+    // y el backend, pero podemos recargar con el nuevo tamaño si es necesario
+    this.cargarPaginaAlojamientos();
+  }
+
+  /**
+   * Carga los alojamientos de la página actual
+   */
+  private cargarPaginaAlojamientos(): void {
     const idUsuario = this.tokenService.getUserId();
-    this.paginaActual++;
+    if (!idUsuario) return;
+
     this.cargando = true;
 
-    this.usuarioService.obtenerAlojamientosUsuario(idUsuario, this.paginaActual)
+    this.usuarioService.obtenerAlojamientosUsuario(idUsuario, this.paginaActual, this.TAMANO_PAGINA)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargando = false)
       )
       .subscribe({
         next: (respuesta) => {
-          const nuevosAlojamientos = respuesta.data as ItemAlojamientoDTO[];
-          this.alojamientos = [...this.alojamientos, ...nuevosAlojamientos];
-          this.filtrarAlojamientos();
+          this.alojamientos = respuesta.data.content;
+          this.metadataPaginacion = respuesta.data.pagination;
+          this.alojamientosFiltrados = [...this.alojamientos];
 
-          nuevosAlojamientos.forEach(alojamiento => {
+          // Cargar métricas para los alojamientos de la página actual
+          this.alojamientos.forEach(alojamiento => {
             this.cargarMetricas(alojamiento.id);
           });
+
+          // Scroll al inicio de la lista
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         error: (error) => {
           const mensaje = this.mensajeHandlerService.handleHttpError(error);
@@ -134,14 +163,15 @@ export class MisAlojamientos implements OnDestroy, OnInit {
     this.paginaActual = 0;
     this.cargando = true;
 
-    this.usuarioService.obtenerAlojamientosUsuario(idUsuario, this.paginaActual)
+    this.usuarioService.obtenerAlojamientosUsuario(idUsuario, this.paginaActual, this.TAMANO_PAGINA)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargando = false)
       )
       .subscribe({
         next: (respuesta) => {
-          this.alojamientos = respuesta.data as ItemAlojamientoDTO[];
+          this.alojamientos = respuesta.data.content;
+          this.metadataPaginacion = respuesta.data.pagination;
           this.alojamientosFiltrados = [...this.alojamientos];
 
           this.alojamientos.forEach(alojamiento => {

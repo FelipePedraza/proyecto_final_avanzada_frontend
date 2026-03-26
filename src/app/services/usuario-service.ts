@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EdicionUsuarioDTO, CambioContrasenaDTO, CreacionAnfitrionDTO } from '../models/usuario-dto';
-import { ReservaEstado } from '../models/reserva-dto';
+import { ReservaEstado, ItemReservaDTO } from '../models/reserva-dto';
+import { ItemAlojamientoDTO } from '../models/alojamiento-dto';
 import { RespuestaDTO } from '../models/respuesta-dto';
+import { PaginatedRespuestaDTO } from '../models/pagination-dto';
 import {environment} from '../../environments/environment';
 
 @Injectable({
@@ -79,25 +81,57 @@ export class UsuarioService {
 
   /**
    * GET /api/usuarios/{id}/alojamientos
-   * Obtiene los alojamientos de un usuario
+   * Obtiene los alojamientos de un usuario con paginación
+   *
+   * @param id ID del usuario
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 5)
+   * @param sort Campo y dirección de ordenamiento (default: 'creadoEn,desc')
+   * @returns Observable con respuesta paginada
    */
-  obtenerAlojamientosUsuario(id: string, pagina: number = 0): Observable<RespuestaDTO> {
+  obtenerAlojamientosUsuario(
+    id: string,
+    page: number = 0,
+    size: number = 5,
+    sort: string = 'creadoEn,desc'
+  ): Observable<PaginatedRespuestaDTO<ItemAlojamientoDTO>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', sort);
 
-    return this.http.get<RespuestaDTO>(`${this.API_URL}/${id}/alojamientos`, { params: { pagina }});
+    return this.http.get<PaginatedRespuestaDTO<ItemAlojamientoDTO>>(
+      `${this.API_URL}/${id}/alojamientos`,
+      { params }
+    );
   }
 
   /**
    * GET /api/usuarios/{id}/reservas
-   * Obtiene las reservas de un usuario con filtros opcionales
+   * Obtiene las reservas de un usuario con filtros opcionales y paginación
+   *
+   * @param id ID del usuario
+   * @param estado Estado de la reserva (opcional)
+   * @param fechaEntrada Fecha de entrada (opcional)
+   * @param fechaSalida Fecha de salida (opcional)
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 5)
+   * @param sort Campo y dirección de ordenamiento (default: 'fechaEntrada,desc')
+   * @returns Observable con respuesta paginada
    */
   obtenerReservasUsuario(
     id: string,
     estado?: ReservaEstado,
     fechaEntrada?: Date,
     fechaSalida?: Date,
-    pagina: number = 0
-  ): Observable<RespuestaDTO> {
-    let params = new HttpParams().set('pagina', pagina.toString());
+    page: number = 0,
+    size: number = 5,
+    sort: string = 'fechaEntrada,desc'
+  ): Observable<PaginatedRespuestaDTO<ItemReservaDTO>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', sort);
 
     if (estado) {
       params = params.set('estado', estado);
@@ -109,7 +143,7 @@ export class UsuarioService {
       params = params.set('fechaSalida', fechaSalida.toISOString());
     }
 
-    return this.http.get<RespuestaDTO>(
+    return this.http.get<PaginatedRespuestaDTO<ItemReservaDTO>>(
       `${this.API_URL}/${id}/reservas`,
       { params }
     );

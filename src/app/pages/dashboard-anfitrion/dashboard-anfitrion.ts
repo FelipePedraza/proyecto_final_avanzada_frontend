@@ -28,6 +28,7 @@ interface ResenaConAlojamiento extends ItemResenaDTO {
   selector: 'app-dashboard-anfitrion',
   imports: [CommonModule, PanelUsuario, RouterLink],
   templateUrl: './dashboard-anfitrion.html',
+  standalone: true,
   styleUrl: './dashboard-anfitrion.css'
 })
 export class DashboardAnfitrion implements OnInit, OnDestroy {
@@ -86,7 +87,7 @@ export class DashboardAnfitrion implements OnInit, OnDestroy {
 
     this.cargando = true;
 
-    // 1. Cargar alojamientos del usuario
+    // 1. Cargar alojamientos del usuario (ahora usa paginación)
     this.usuarioService.obtenerAlojamientosUsuario(usuarioId, 0)
       .pipe(
         takeUntil(this.destroy$),
@@ -95,7 +96,8 @@ export class DashboardAnfitrion implements OnInit, OnDestroy {
       .subscribe({
         next: (respuesta) => {
           if (!respuesta.error && respuesta.data) {
-            this.alojamientos = respuesta.data as ItemAlojamientoDTO[];
+            // Ahora data es PageResponseDTO, accedemos a content
+            this.alojamientos = respuesta.data.content as ItemAlojamientoDTO[];
             this.metricasGlobales.totalAlojamientos = this.alojamientos.length;
 
             // 2. Cargar métricas de cada alojamiento
@@ -172,7 +174,7 @@ export class DashboardAnfitrion implements OnInit, OnDestroy {
 
           respuestas.forEach((respuesta, index) => {
             if (!respuesta.error && respuesta.data) {
-              const resenas = respuesta.data as ItemResenaDTO[];
+              const resenas = respuesta.data as unknown as ItemResenaDTO[];
               const alojamiento = this.alojamientos[index];
 
               // Filtrar solo las que NO tienen respuesta

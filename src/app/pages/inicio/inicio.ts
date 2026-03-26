@@ -6,6 +6,7 @@ import { BarraBusqueda } from '../../components/barra-busqueda/barra-busqueda';
 
 //DTO
 import { ItemAlojamientoDTO } from '../../models/alojamiento-dto';
+import { PaginationMetadata } from '../../models/pagination-dto';
 
 //Servicios
 import { CiudadService} from '../../services/ciudad-service';
@@ -21,9 +22,11 @@ export class Inicio implements OnInit, OnDestroy {
 
   // Alojamientos populares (sin filtros)
   alojamientosPopulares: ItemAlojamientoDTO[] = [];
+  metadataPopulares: PaginationMetadata | null = null;
 
   // Alojamientos sugeridos por ciudad
   alojamientosSugeridos: ItemAlojamientoDTO[] = [];
+  metadataSugeridos: PaginationMetadata | null = null;
   ciudadSugerida: string = '';
   ciudades: string[] = [];
 
@@ -53,7 +56,7 @@ export class Inicio implements OnInit, OnDestroy {
   private cargarAlojamientosPopulares(): void {
     this.cargandoPopulares = true;
 
-    this.alojamientoService.obtenerAlojamientos({}, 0)
+    this.alojamientoService.obtenerAlojamientos({}, 0, 8, 'promedioCalificaciones,desc')
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargandoPopulares = false)
@@ -61,35 +64,8 @@ export class Inicio implements OnInit, OnDestroy {
       .subscribe({
         next: (respuesta) => {
           if (!respuesta.error) {
-            this.alojamientosPopulares = respuesta.data.sort((a: any, b : any) => {
-              const calA = Number(a.promedioCalificaciones) || 0;
-              const calB = Number(b.promedioCalificaciones) || 0;
-
-              if (calB === calA) {
-                this.cargandoReservas = true;
-                // Desempate por número de reseñas
-                this.alojamientoService.obtenerReservasAlojamiento(a.id).pipe(
-                  takeUntil(this.destroy$),
-                  finalize(() => this.cargandoReservas = false)
-                )
-                  .subscribe({
-                    next: (respuesta) => {
-                      const reservasA = respuesta.data.length;
-                      this.alojamientoService.obtenerReservasAlojamiento(b.id).pipe(
-                        takeUntil(this.destroy$),
-                        finalize(() => this.cargandoReservas = false)
-                      )
-                        .subscribe({
-                          next: (respuesta) => {
-                            const reservasB = respuesta.data.length;
-                            return reservasB - reservasA;
-                          }
-                        });
-                    }
-                  });
-              }
-              return calB - calA;
-            }).slice(0, 8); // Máximo 8
+            this.alojamientosPopulares = respuesta.data.content.slice(0, 8); // Máximo 8
+            this.metadataPopulares = respuesta.data.pagination;
           }
         },
         error: (error) => {
@@ -122,7 +98,7 @@ export class Inicio implements OnInit, OnDestroy {
     this.ciudadSugerida = ciudadAleatoria;
     this.cargandoSugeridos = true;
 
-    this.alojamientoService.sugerirAlojamientos(ciudadAleatoria)
+    this.alojamientoService.sugerirAlojamientos(ciudadAleatoria, 0, 4)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargandoSugeridos = false)
@@ -130,7 +106,8 @@ export class Inicio implements OnInit, OnDestroy {
       .subscribe({
         next: (respuesta) => {
           if (!respuesta.error) {
-            this.alojamientosSugeridos = respuesta.data.slice(0, 4); // Máximo 4
+            this.alojamientosSugeridos = respuesta.data.content.slice(0, 4); // Máximo 4
+            this.metadataSugeridos = respuesta.data.pagination;
           }
         },
         error: (error) => {

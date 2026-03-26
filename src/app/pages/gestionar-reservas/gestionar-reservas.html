@@ -70,9 +70,9 @@
         <div class="reservations-list">
 
           @if (tabActiva === 'pendientes') {
-            <h3>Reservas Pendientes</h3>
+            <h3>Reservas Pendientes ({{ reservasPendientes.length }})</h3>
             @if (reservasPendientes.length > 0) {
-              @for (reserva of reservasPendientes; track reserva.id) {
+              @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
                   <img [src]="reserva.alojamiento.imagenes[0]" [alt]="reserva.alojamiento.titulo" class="reservation-image">
                   <div class="reservation-info">
@@ -109,6 +109,16 @@
                   </div>
                 </div>
               }
+
+              <!-- Paginación -->
+              @if (metadataPaginacion; as meta) {
+                <app-paginacion
+                  [metadata]="meta"
+                  [showPageSizeSelector]="false"
+                  [showFirstLast]="true"
+                  [showInfo]="true"
+                  (pageChange)="onPageChange($event)"></app-paginacion>
+              }
             } @else {
               <div class="empty-state-small">
                 <i class="fa-solid fa-clipboard-check"></i>
@@ -118,9 +128,9 @@
           }
 
           @if (tabActiva === 'confirmadas') {
-            <h3>Reservas Confirmadas</h3>
+            <h3>Reservas Confirmadas ({{ reservasConfirmadas.length }})</h3>
             @if (reservasConfirmadas.length > 0) {
-              @for (reserva of reservasConfirmadas; track reserva.id) {
+              @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
                   <img [src]="reserva.alojamiento.imagenes[0]" [alt]="reserva.alojamiento.titulo" class="reservation-image">
                   <div class="reservation-info">
@@ -154,6 +164,16 @@
                   </div>
                 </div>
               }
+
+              <!-- Paginación -->
+              @if (metadataPaginacion; as meta) {
+                <app-paginacion
+                  [metadata]="meta"
+                  [showPageSizeSelector]="false"
+                  [showFirstLast]="true"
+                  [showInfo]="true"
+                  (pageChange)="onPageChange($event)"></app-paginacion>
+              }
             } @else {
               <div class="empty-state-small">
                 <i class="fa-solid fa-calendar-check"></i>
@@ -163,9 +183,9 @@
           }
 
           @if (tabActiva === 'historial') {
-            <h3>Historial de Reservas</h3>
+            <h3>Historial de Reservas ({{ reservasHistorial.length }})</h3>
             @if (reservasHistorial.length > 0) {
-              @for (reserva of reservasHistorial; track reserva.id) {
+              @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
                   <img [src]="reserva.alojamiento.imagenes[0]" [alt]="reserva.alojamiento.titulo" class="reservation-image">
                   <div class="reservation-info">
@@ -210,6 +230,16 @@
                     }
                   </div>
                 </div>
+              }
+
+              <!-- Paginación -->
+              @if (metadataPaginacion; as meta) {
+                <app-paginacion
+                  [metadata]="meta"
+                  [showPageSizeSelector]="false"
+                  [showFirstLast]="true"
+                  [showInfo]="true"
+                  (pageChange)="onPageChange($event)"></app-paginacion>
               }
             } @else {
               <div class="empty-state-small">

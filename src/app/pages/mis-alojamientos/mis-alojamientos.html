@@ -138,6 +138,16 @@
           }
 
         </div>
+
+        <!-- Componente de Paginación -->
+        @if (metadataPaginacion && metadataPaginacion.totalPages > 1) {
+          <app-paginacion
+            [metadata]="metadataPaginacion"
+            [showPageSizeSelector]="false"
+            [showFirstLast]="true"
+            (pageChange)="onPageChange($event)">
+          </app-paginacion>
+        }
       }
 
       <!-- Estado Vacío -->

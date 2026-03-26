@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreacionAlojamientoDTO, EdicionAlojamientoDTO, AlojamientoFiltroDTO } from '../models/alojamiento-dto';
-import { ReservaEstado } from '../models/reserva-dto';
-import { CreacionResenaDTO, CreacionRespuestaDTO } from '../models/resena-dto';
+import { CreacionAlojamientoDTO, EdicionAlojamientoDTO, AlojamientoFiltroDTO, ItemAlojamientoDTO } from '../models/alojamiento-dto';
+import { ReservaEstado, ItemReservaDTO } from '../models/reserva-dto';
+import { CreacionResenaDTO, CreacionRespuestaDTO, ItemResenaDTO } from '../models/resena-dto';
 import { RespuestaDTO } from '../models/respuesta-dto';
+import { PaginatedRespuestaDTO } from '../models/pagination-dto';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -52,11 +53,25 @@ export class AlojamientoService {
 
   /**
    * GET /api/alojamientos?filtros...
-   * Obtiene lista de alojamientos con filtros
+   * Obtiene lista de alojamientos con filtros y paginación
+   *
+   * @param filtros Filtros de búsqueda
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 10)
+   * @param sort Campo y dirección de ordenamiento (default: 'creadoEn,desc')
+   * @returns Observable con respuesta paginada
    */
-  obtenerAlojamientos(filtros: Partial<AlojamientoFiltroDTO>, pagina: number = 0): Observable<RespuestaDTO> {
+  obtenerAlojamientos(
+    filtros: Partial<AlojamientoFiltroDTO>,
+    page: number = 0,
+    size: number = 10,
+    sort: string = 'creadoEn,desc'
+  ): Observable<PaginatedRespuestaDTO<ItemAlojamientoDTO>> {
 
-    let params = new HttpParams().set('pagina', pagina.toString());
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', sort);
 
     if (filtros.ciudad) {
       params = params.set('ciudad', filtros.ciudad);
@@ -82,15 +97,32 @@ export class AlojamientoService {
       });
     }
 
-    return this.http.get<RespuestaDTO>(this.API_URL, { params });
+    return this.http.get<PaginatedRespuestaDTO<ItemAlojamientoDTO>>(this.API_URL, { params });
   }
 
   /**
    * GET /api/alojamientos/sugerencias?ciudad=...
-   * Obtiene sugerencias de alojamientos por ciudad
+   * Obtiene sugerencias de alojamientos por ciudad con paginación
+   *
+   * @param ciudad Ciudad para buscar sugerencias (requerido)
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 10)
+   * @returns Observable con respuesta paginada
    */
-  sugerirAlojamientos(ciudad: string): Observable<RespuestaDTO> {
-    return this.http.get<RespuestaDTO>(`${this.API_URL}/sugerencias`, { params: {ciudad} });
+  sugerirAlojamientos(
+    ciudad: string,
+    page: number = 0,
+    size: number = 10
+  ): Observable<PaginatedRespuestaDTO<ItemAlojamientoDTO>> {
+    const params = new HttpParams()
+      .set('ciudad', ciudad)
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<PaginatedRespuestaDTO<ItemAlojamientoDTO>>(
+      `${this.API_URL}/sugerencias`,
+      { params }
+    );
   }
 
   // ==================== MÉTRICAS ====================
@@ -107,17 +139,31 @@ export class AlojamientoService {
 
   /**
    * GET /api/alojamientos/{id}/reservas
-   * Obtiene las reservas de un alojamiento con filtros opcionales
+   * Obtiene las reservas de un alojamiento con filtros opcionales y paginación
+   *
+   * @param id ID del alojamiento
+   * @param estado Estado de la reserva (opcional)
+   * @param fechaEntrada Fecha de entrada (opcional)
+   * @param fechaSalida Fecha de salida (opcional)
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 10)
+   * @param sort Campo y dirección de ordenamiento (default: 'fechaEntrada,desc')
+   * @returns Observable con respuesta paginada
    */
   obtenerReservasAlojamiento(
     id: number,
     estado?: ReservaEstado,
     fechaEntrada?: Date,
     fechaSalida?: Date,
-    pagina: number = 0
-  ): Observable<RespuestaDTO> {
+    page: number = 0,
+    size: number = 10,
+    sort: string = 'fechaEntrada,desc'
+  ): Observable<PaginatedRespuestaDTO<ItemReservaDTO>> {
 
-    let params = new HttpParams().set('pagina', pagina.toString());
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', sort);
 
     if (estado) {
       params = params.set('estado', estado);
@@ -129,18 +175,39 @@ export class AlojamientoService {
       params = params.set('fechaSalida', fechaSalida.toISOString());
     }
 
-    return this.http.get<RespuestaDTO>(`${this.API_URL}/${id}/reservas`, { params });
+    return this.http.get<PaginatedRespuestaDTO<ItemReservaDTO>>(
+      `${this.API_URL}/${id}/reservas`,
+      { params }
+    );
   }
 
   // ==================== RESEÑAS ====================
 
   /**
    * GET /api/alojamientos/{id}/resenas
-   * Obtiene las reseñas de un alojamiento
+   * Obtiene las reseñas de un alojamiento con paginación
+   *
+   * @param id ID del alojamiento
+   * @param page Número de página (0-based, default: 0)
+   * @param size Tamaño de la página (default: 5)
+   * @param sort Campo y dirección de ordenamiento (default: 'creadoEn,desc')
+   * @returns Observable con respuesta paginada
    */
-  obtenerResenasAlojamiento(id: number, pagina: number = 0): Observable<RespuestaDTO> {
-    const params = new HttpParams().set('pagina', pagina.toString());
-    return this.http.get<RespuestaDTO>(`${this.API_URL}/${id}/resenas`, { params });
+  obtenerResenasAlojamiento(
+    id: number,
+    page: number = 0,
+    size: number = 5,
+    sort: string = 'creadoEn,desc'
+  ): Observable<PaginatedRespuestaDTO<ItemResenaDTO>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', sort);
+
+    return this.http.get<PaginatedRespuestaDTO<ItemResenaDTO>>(
+      `${this.API_URL}/${id}/resenas`,
+      { params }
+    );
   }
 
   /**

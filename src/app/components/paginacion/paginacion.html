@@ -1,1 +1,136 @@
-<p>paginacion works!</p>
+<!-- Componente de Paginación -->
+@if (totalPaginas > 0) {
+  <div class="paginacion-container">
+
+    <!-- Información de resultados -->
+    @if (showInfo && totalElementos > 0) {
+      <div class="paginacion-info" role="status" aria-live="polite">
+        {{ infoTexto }}
+      </div>
+    }
+
+    <!-- Controles de paginación -->
+    <div class="paginacion-controles" [class.compact-mode]="compactMode" role="navigation" aria-label="Paginación">
+
+      <!-- Modo Compacto: Solo Anterior/Siguiente -->
+      @if (compactMode) {
+        <button
+          class="btn-paginacion btn-nav"
+          [class.disabled]="!tieneAnterior"
+          [disabled]="!tieneAnterior"
+          (click)="paginaAnterior()"
+          title="Página anterior"
+          aria-label="Ir a la página anterior">
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          <span>Anterior</span>
+        </button>
+
+        <span class="paginacion-texto" aria-current="page">
+          Página {{ paginaActual + 1 }} de {{ totalPaginas }}
+        </span>
+
+        <button
+          class="btn-paginacion btn-nav"
+          [class.disabled]="!tieneSiguiente"
+          [disabled]="!tieneSiguiente"
+          (click)="paginaSiguiente()"
+          title="Página siguiente"
+          aria-label="Ir a la página siguiente">
+          <span>Siguiente</span>
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      }
+
+      <!-- Modo Completo: Paginación Numérica -->
+      @if (!compactMode) {
+        <!-- Botón Primera Página -->
+        @if (showFirstLast) {
+          <button
+            class="btn-paginacion btn-nav"
+            [class.disabled]="!tieneAnterior"
+            [disabled]="!tieneAnterior"
+            (click)="primeraPagina()"
+            title="Primera página"
+            aria-label="Ir a la primera página">
+            <i class="fa-solid fa-angles-left" aria-hidden="true"></i>
+          </button>
+        }
+
+        <!-- Botón Página Anterior -->
+        <button
+          class="btn-paginacion btn-nav"
+          [class.disabled]="!tieneAnterior"
+          [disabled]="!tieneAnterior"
+          (click)="paginaAnterior()"
+          title="Página anterior"
+          aria-label="Ir a la página anterior">
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+
+        <!-- Números de Página -->
+        <div class="pagina-numeros" role="list">
+          @for (item of generarPaginas(); track $index) {
+            @if (esElipse(item)) {
+              <!-- Elipse -->
+              <span class="elipsis" aria-hidden="true">...</span>
+            } @else {
+              <!-- Botón de Página -->
+              <button
+                class="btn-paginacion btn-numero"
+                [class.active]="item === paginaActual"
+                [attr.aria-current]="item === paginaActual ? 'page' : null"
+                [attr.aria-label]="'Ir a la página ' + ((item | number) || (+item))"
+                (click)="irAPagina(+item)">
+                {{ (+item) + 1 }}
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Botón Página Siguiente -->
+        <button
+          class="btn-paginacion btn-nav"
+          [class.disabled]="!tieneSiguiente"
+          [disabled]="!tieneSiguiente"
+          (click)="paginaSiguiente()"
+          title="Página siguiente"
+          aria-label="Ir a la página siguiente">
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+
+        <!-- Botón Última Página -->
+        @if (showFirstLast) {
+          <button
+            class="btn-paginacion btn-nav"
+            [class.disabled]="!tieneSiguiente"
+            [disabled]="!tieneSiguiente"
+            (click)="ultimaPagina()"
+            title="Última página"
+            aria-label="Ir a la última página">
+            <i class="fa-solid fa-angles-right" aria-hidden="true"></i>
+          </button>
+        }
+      }
+
+    </div>
+
+    <!-- Selector de tamaño de página -->
+    @if (showPageSizeSelector && pageSizeOptions.length > 0) {
+      <div class="page-size-selector">
+        <label for="pageSize">Mostrar:</label>
+        <select
+          id="pageSize"
+          class="select-page-size"
+          [ngModel]="pageSize"
+          (ngModelChange)="cambiarTamanoPagina($event)"
+          aria-label="Seleccionar cantidad de resultados por página">
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+        <span>por página</span>
+      </div>
+    }
+
+  </div>
+}

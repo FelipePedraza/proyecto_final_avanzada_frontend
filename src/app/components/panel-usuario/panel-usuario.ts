@@ -12,6 +12,7 @@ import { FechaService } from '../../services/fecha-service';
   selector: 'app-panel-usuario',
   imports: [RouterLink, CommonModule],
   templateUrl: './panel-usuario.html',
+  standalone: true,
   styleUrl: './panel-usuario.css'
 })
 export class PanelUsuario {

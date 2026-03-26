@@ -139,47 +139,14 @@
         </div>
 
         <!-- Paginación -->
-        @if (totalPaginas > 1) {
-          <nav class="pagination">
-            <ul>
-              <!-- Anterior -->
-              @if (paginaActual > 0) {
-                <li>
-                  <a (click)="irAPagina(paginaActual - 1)" style="cursor: pointer;" title="Página anterior">
-                    <i class="fa-solid fa-chevron-left"></i>
-                  </a>
-                </li>
-              }
-
-              <!-- Números de Página -->
-              @for (pagina of generarPaginas(); track pagina; let i = $index) {
-                <!-- Ellipsis -->
-                @if (mostrarEllipsis(i, generarPaginas())) {
-                  <li><span>...</span></li>
-                }
-
-                <!-- Página -->
-                <li>
-                  <a
-                    (click)="irAPagina(pagina)"
-                    [class.active]="pagina === paginaActual"
-                    style="cursor: pointer;"
-                    [title]="'Ir a página ' + (pagina + 1)">
-                    {{ pagina + 1 }}
-                  </a>
-                </li>
-              }
-
-              <!-- Siguiente -->
-              @if (paginaActual < totalPaginas - 1) {
-                <li>
-                  <a (click)="irAPagina(paginaActual + 1)" style="cursor: pointer;" title="Página siguiente">
-                    <i class="fa-solid fa-chevron-right"></i>
-                  </a>
-                </li>
-              }
-            </ul>
-          </nav>
+        @if (metadataPaginacion && metadataPaginacion.totalPages > 1) {
+          <app-paginacion
+            [metadata]="metadataPaginacion"
+            [showPageSizeSelector]="true"
+            [pageSizeOptions]="[10, 20, 50]"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-paginacion>
         }
       }
 

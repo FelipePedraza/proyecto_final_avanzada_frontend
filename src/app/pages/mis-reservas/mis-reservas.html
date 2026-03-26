@@ -142,6 +142,15 @@
                   </div>
                 </div>
               }
+
+              <!-- Paginación para Activas -->
+              @if (paginacionActivas && paginacionActivas.totalPages > 1) {
+                <app-paginacion
+                  [metadata]="paginacionActivas"
+                  [showPageSizeSelector]="false"
+                  (pageChange)="onPageChange($event)">
+                </app-paginacion>
+              }
             } @else {
               <div class="empty-state">
                 <i class="fa-solid fa-calendar-xmark"></i>
@@ -219,6 +228,15 @@
                   </div>
                 </div>
               }
+
+              <!-- Paginación para Pasadas -->
+              @if (paginacionPasadas && paginacionPasadas.totalPages > 1) {
+                <app-paginacion
+                  [metadata]="paginacionPasadas"
+                  [showPageSizeSelector]="false"
+                  (pageChange)="onPageChange($event)">
+                </app-paginacion>
+              }
             } @else {
               <div class="empty-state">
                 <i class="fa-solid fa-clock-rotate-left"></i>
@@ -285,6 +303,15 @@
                     </a>
                   </div>
                 </div>
+              }
+
+              <!-- Paginación para Canceladas -->
+              @if (paginacionCanceladas && paginacionCanceladas.totalPages > 1) {
+                <app-paginacion
+                  [metadata]="paginacionCanceladas"
+                  [showPageSizeSelector]="false"
+                  (pageChange)="onPageChange($event)">
+                </app-paginacion>
               }
             } @else {
               <div class="empty-state">

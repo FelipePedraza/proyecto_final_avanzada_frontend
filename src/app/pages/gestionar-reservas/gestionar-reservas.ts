@@ -6,6 +6,8 @@ import {PanelUsuario} from '../../components/panel-usuario/panel-usuario';
 // IMPORTACIONES DE ANGULAR-CALENDAR
 import {CalendarEvent, CalendarModule} from 'angular-calendar';
 import {addMonths, endOfDay, startOfDay, subMonths} from 'date-fns';
+import {Paginacion} from '../../components/paginacion/paginacion';
+import {PaginationMetadata} from '../../models/pagination-dto';
 
 // Servicios
 import {AlojamientoService} from '../../services/alojamiento-service';
@@ -18,8 +20,7 @@ import { PrecioService } from '../../services/precio-service';
 
 // DTO
 import {ReservaDTO, ReservaEstado} from '../../models/reserva-dto';
-import {AlojamientoDTO} from '../../models/alojamiento-dto';
-import {RespuestaDTO} from '../../models/respuesta-dto';
+import {ItemAlojamientoDTO} from '../../models/alojamiento-dto';
 
 
 // Define los colores para los eventos del calendario
@@ -44,9 +45,11 @@ const CALENDAR_COLORS = {
     CommonModule,
     PanelUsuario,
     CalendarModule,
-    RouterLink
+    RouterLink,
+    Paginacion
   ],
   templateUrl: './gestionar-reservas.html',
+  standalone: true,
   styleUrl: './gestionar-reservas.css'
 })
 export class GestionarReservas implements OnInit, OnDestroy {
@@ -63,6 +66,14 @@ export class GestionarReservas implements OnInit, OnDestroy {
   private todasLasReservas: ReservaDTO[] = [];
   cargando: boolean = false;
   private destroy$ = new Subject<void>();
+
+  // Paginación por tab (cliente-side)
+  readonly TAMANO_PAGINA = 5;
+  paginasTab = {
+    pendientes: 0,
+    confirmadas: 0,
+    historial: 0
+  };
 
   // ==================== CONSTRUCTOR ====================
   constructor(
@@ -96,18 +107,18 @@ export class GestionarReservas implements OnInit, OnDestroy {
 
     this.cargando = true; // <-- Inicia la carga
 
-    // 1. Obtener alojamientos del usuario
+    // 1. Obtener alojamientos del usuario (ahora usa paginación)
     this.usuarioService.obtenerAlojamientosUsuario(usuarioId, 0)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (respuestaAlojamientos: RespuestaDTO) => {
-          if (respuestaAlojamientos.error || !respuestaAlojamientos.data || respuestaAlojamientos.data.length === 0) {
+        next: (respuestaAlojamientos) => {
+          if (respuestaAlojamientos.error || !respuestaAlojamientos.data || respuestaAlojamientos.data.content.length === 0) {
             // No hay alojamientos
             this.cargando = false; // <-- Termina la carga
             return;
           }
 
-          const alojamientos: AlojamientoDTO[] = respuestaAlojamientos.data;
+          const alojamientos: ItemAlojamientoDTO[] = respuestaAlojamientos.data.content;
 
           // 2. Preparar todas las llamadas para las reservas
           const observablesDeReservas = alojamientos.map(alojamiento =>
@@ -130,7 +141,8 @@ export class GestionarReservas implements OnInit, OnDestroy {
                 const todasLasReservas: ReservaDTO[] = [];
                 respuestasReservas.forEach(respuesta => {
                   if (respuesta && !respuesta.error && respuesta.data) {
-                    todasLasReservas.push(...(respuesta.data as ReservaDTO[]));
+                    // Ahora data es un PageResponseDTO, accedemos a content
+                    todasLasReservas.push(...(respuesta.data.content as ReservaDTO[]));
                   }
                 });
 
@@ -295,5 +307,78 @@ export class GestionarReservas implements OnInit, OnDestroy {
 
   cambiarTab(tab: 'pendientes' | 'confirmadas' | 'historial'): void {
     this.tabActiva = tab;
+    // Reiniciar a la primera página al cambiar de tab
+    this.paginasTab[tab] = 0;
+  }
+
+  // ==================== GETTERS PARA PAGINACIÓN ====================
+
+  /**
+   * Obtiene las reservas paginadas según el tab activo
+   */
+  get reservasPaginadas(): ReservaDTO[] {
+    const pagina = this.paginasTab[this.tabActiva];
+    const inicio = pagina * this.TAMANO_PAGINA;
+    const fin = inicio + this.TAMANO_PAGINA;
+
+    switch (this.tabActiva) {
+      case 'pendientes':
+        return this.reservasPendientes.slice(inicio, fin);
+      case 'confirmadas':
+        return this.reservasConfirmadas.slice(inicio, fin);
+      case 'historial':
+        return this.reservasHistorial.slice(inicio, fin);
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Genera la metadata de paginación para el tab activo
+   */
+  get metadataPaginacion(): PaginationMetadata | null {
+    const totalElementos = this.getTotalElementosTab();
+    const totalPaginas = Math.ceil(totalElementos / this.TAMANO_PAGINA) || 0;
+    const paginaActual = this.paginasTab[this.tabActiva];
+
+    if (totalElementos === 0) {
+      return null;
+    }
+
+    return {
+      currentPage: paginaActual,
+      pageSize: this.TAMANO_PAGINA,
+      totalElements: totalElementos,
+      totalPages: totalPaginas,
+      first: paginaActual === 0,
+      last: paginaActual === totalPaginas - 1 || totalPaginas === 0,
+      hasNext: paginaActual < totalPaginas - 1,
+      hasPrevious: paginaActual > 0
+    };
+  }
+
+  /**
+   * Obtiene el total de elementos del tab activo
+   */
+  private getTotalElementosTab(): number {
+    switch (this.tabActiva) {
+      case 'pendientes':
+        return this.reservasPendientes.length;
+      case 'confirmadas':
+        return this.reservasConfirmadas.length;
+      case 'historial':
+        return this.reservasHistorial.length;
+      default:
+        return 0;
+    }
+  }
+
+  // ==================== MÉTODOS DE PAGINACIÓN ====================
+
+  /**
+   * Cambia la página del tab activo
+   */
+  onPageChange(nuevaPagina: number): void {
+    this.paginasTab[this.tabActiva] = nuevaPagina;
   }
 }

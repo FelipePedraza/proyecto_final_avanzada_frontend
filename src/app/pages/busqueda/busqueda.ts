@@ -5,16 +5,18 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { AlojamientoItem } from '../../components/alojamiento-item/alojamiento-item';
 import { BarraBusqueda } from '../../components/barra-busqueda/barra-busqueda';
+import { Paginacion } from '../../components/paginacion/paginacion';
 
 // Servicios
 import { AlojamientoService } from '../../services/alojamiento-service';
 
 //DTOs
 import { ItemAlojamientoDTO, AlojamientoFiltroDTO } from '../../models/alojamiento-dto';
+import { PaginationMetadata } from '../../models/pagination-dto';
 
 @Component({
   selector: 'app-busqueda',
-  imports: [CommonModule, FormsModule, AlojamientoItem, BarraBusqueda],
+  imports: [CommonModule, FormsModule, AlojamientoItem, BarraBusqueda, Paginacion],
   templateUrl: './busqueda.html',
   styleUrl: './busqueda.css'
 })
@@ -33,11 +35,13 @@ export class Busqueda implements OnInit, OnDestroy {
   precioMin: number = 0;
   precioMax: number = 0;
 
-
   // Paginación
   paginaActual: number = 0;
-  totalPaginas: number = 0;
+  metadataPaginacion: PaginationMetadata | null = null;
   readonly ITEMS_POR_PAGINA = 10;
+
+  // Ordenamiento
+  ordenamientoActual: string = 'creadoEn,desc';
 
   // Estados
   cargando: boolean = false;
@@ -119,21 +123,26 @@ export class Busqueda implements OnInit, OnDestroy {
       filtros.precioMax = this.precioMax;
     }
 
-    // Llamar al servicio con el objeto correcto
-    this.alojamientoService.obtenerAlojamientos(filtros, this.paginaActual)
+    // Llamar al servicio con paginación
+    this.alojamientoService.obtenerAlojamientos(
+      filtros,
+      this.paginaActual,
+      this.ITEMS_POR_PAGINA,
+      this.ordenamientoActual
+    )
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargando = false)
       )
       .subscribe({
         next: (respuesta) => {
-          this.alojamientos = respuesta.data || [];
-          this.totalResultados = this.alojamientos.length;
-          this.calcularPaginas();
+          this.alojamientos = respuesta.data.content;
+          this.metadataPaginacion = respuesta.data.pagination;
+          this.totalResultados = respuesta.data.pagination.totalElements;
         },
         error: (error) => {
           console.error('Error al buscar alojamientos:', error);
-          this.error = error.error.data;
+          this.error = error.error?.data || 'Error al cargar los alojamientos';
           this.errorCarga = true;
         }
       });
@@ -152,29 +161,49 @@ export class Busqueda implements OnInit, OnDestroy {
     this.aplicarFiltros();
   }
 
-  // ==================== PAGINACIÓN ====================
+  // ==================== ORDENAMIENTO ====================
 
-  private calcularPaginas(): void {
-    this.totalPaginas = Math.ceil(this.totalResultados / this.ITEMS_POR_PAGINA);
+  cambiarOrdenamiento(campo: string, direccion: 'asc' | 'desc'): void {
+    this.ordenamientoActual = `${campo},${direccion}`;
+    this.paginaActual = 0;
+    this.buscarAlojamientos();
   }
 
+  // ==================== PAGINACIÓN ====================
+
   irAPagina(pagina: number): void {
-    if (pagina >= 0 && pagina < this.totalPaginas) {
+    if (pagina >= 0 && this.metadataPaginacion && pagina < this.metadataPaginacion.totalPages) {
       this.paginaActual = pagina;
       this.buscarAlojamientos();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
+  onPageChange(nuevaPagina: number): void {
+    this.irAPagina(nuevaPagina);
+  }
+
+  onPageSizeChange(nuevoTamano: number): void {
+    // Si el backend soporta cambio de tamaño de página dinámico
+    // (requeriría actualizar el servicio)
+    this.paginaActual = 0;
+    this.buscarAlojamientos();
+  }
+
+  // Métodos legacy para compatibilidad con template existente
   generarPaginas(): number[] {
+    if (!this.metadataPaginacion) return [];
+
     const paginas: number[] = [];
     const rango = 2;
+    const totalPages = this.metadataPaginacion.totalPages;
+    const currentPage = this.metadataPaginacion.currentPage;
 
-    for (let i = 0; i < this.totalPaginas; i++) {
+    for (let i = 0; i < totalPages; i++) {
       if (
         i === 0 ||
-        i === this.totalPaginas - 1 ||
-        (i >= this.paginaActual - rango && i <= this.paginaActual + rango)
+        i === totalPages - 1 ||
+        (i >= currentPage - rango && i <= currentPage + rango)
       ) {
         paginas.push(i);
       }

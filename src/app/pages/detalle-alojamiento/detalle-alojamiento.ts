@@ -20,14 +20,18 @@ import { FormUtilsService } from '../../services/formUtils-service';
 import { FechaService } from '../../services/fecha-service';
 import { PrecioService } from '../../services/precio-service';
 import { CalificacionService } from '../../services/calificacion-service';
+
 // DTOs
 import { AlojamientoDTO, MetricasDTO } from '../../models/alojamiento-dto';
 import { CreacionRespuestaDTO, ItemResenaDTO } from '../../models/resena-dto';
 import { CreacionReservaDTO, ItemReservaDTO, ReservaEstado, CreacionReservaRespuestaDTO } from '../../models/reserva-dto';
 import { MarcadorDTO } from '../../models/marcador-dto';
 import { UsuarioDTO } from '../../models/usuario-dto';
+import { PaginationMetadata } from '../../models/pagination-dto';
+
 // Componente de pago
 import { ModalPago } from '../../components/modal-pago/modal-pago';
+import { Paginacion } from '../../components/paginacion/paginacion';
 
 const CALENDAR_COLORS = {
   confirmada: {
@@ -38,7 +42,7 @@ const CALENDAR_COLORS = {
 
 @Component({
   selector: 'app-detalle-alojamiento',
-  imports: [CommonModule, ReactiveFormsModule, CalendarModule, RouterLink, ModalPago],
+  imports: [CommonModule, ReactiveFormsModule, CalendarModule, RouterLink, ModalPago, Paginacion],
   templateUrl: './detalle-alojamiento.html',
   styleUrl: './detalle-alojamiento.css'
 })
@@ -57,7 +61,9 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   // Paginación de reseñas
   paginaResenas: number = 0;
-  hayMasResenas: boolean = true;
+  metadataResenas: PaginationMetadata | null = null;
+  readonly TAMANO_PAGINA_RESENAS = 5;
+
   idAlojamiento: number = 0;
 
   // Gestión de imágenes
@@ -161,10 +167,15 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
     this.cargando = true;
     this.errorCarga = false;
 
+    // Resetear paginación de reseñas
+    this.paginaResenas = 0;
+    this.resenas = [];
+    this.metadataResenas = null;
+
     forkJoin({
       alojamiento: this.alojamientoService.obtenerPorId(this.idAlojamiento),
       metricas: this.alojamientoService.obtenerMetricas(this.idAlojamiento),
-      resenas: this.alojamientoService.obtenerResenasAlojamiento(this.idAlojamiento, 0),
+      resenas: this.alojamientoService.obtenerResenasAlojamiento(this.idAlojamiento, 0, this.TAMANO_PAGINA_RESENAS),
       reservasConfirmadas: this.alojamientoService.obtenerReservasAlojamiento(this.idAlojamiento, ReservaEstado.CONFIRMADA)
     })
       .pipe(
@@ -175,9 +186,13 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
         next: (respuesta) => {
           this.alojamiento = respuesta.alojamiento.data;
           this.metricas = respuesta.metricas.data;
-          this.resenas = respuesta.resenas.data;
-          this.hayMasResenas = respuesta.resenas.data.length > 0;
-          this.reservasConfirmadas = respuesta.reservasConfirmadas.data;
+
+          // Usar nueva estructura paginada para reseñas
+          this.resenas = respuesta.resenas.data.content;
+          this.metadataResenas = respuesta.resenas.data.pagination;
+
+          this.reservasConfirmadas = respuesta.reservasConfirmadas.data.content;
+
           this.usuarioService.obtener(respuesta.alojamiento.data.anfitrionId).pipe(
             takeUntil(this.destroy$),
             finalize(() => this.cargando = false)).subscribe({
@@ -251,31 +266,82 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
 
   // ==================== RESEÑAS ====================
 
-  cargarMasResenas(): void {
-    if (this.cargandoResenas || !this.hayMasResenas) return;
+  /**
+   * Determina si hay más reseñas disponibles
+   */
+  get hayMasResenas(): boolean {
+    return this.metadataResenas?.hasNext ?? false;
+  }
 
+  /**
+   * Cambia a una página específica de reseñas (navegación compacta)
+   */
+  onResenasPageChange(nuevaPagina: number): void {
+    if (this.cargandoResenas || nuevaPagina === this.paginaResenas) return;
+
+    this.paginaResenas = nuevaPagina;
+    this.cargarPaginaResenas();
+  }
+
+  /**
+   * Carga las reseñas de la página actual
+   */
+  private cargarPaginaResenas(): void {
     this.cargandoResenas = true;
-    this.paginaResenas++;
 
-    this.alojamientoService.obtenerResenasAlojamiento(this.idAlojamiento, this.paginaResenas)
+    this.alojamientoService.obtenerResenasAlojamiento(
+      this.idAlojamiento,
+      this.paginaResenas,
+      this.TAMANO_PAGINA_RESENAS
+    )
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.cargandoResenas = false)
       )
       .subscribe({
         next: (respuesta) => {
-          const nuevasResenas = respuesta.data as ItemResenaDTO[];
+          this.resenas = respuesta.data.content;
+          this.metadataResenas = respuesta.data.pagination;
+        },
+        error: (error) => {
+          const mensaje = this.mensajeHandlerService.handleHttpError(error);
+          this.mensajeHandlerService.showError(mensaje);
+        }
+      });
+  }
+
+  /**
+   * @deprecated Usar onResenasPageChange para navegación por páginas
+   * Carga más reseñas (paginación incremental - legacy)
+   */
+  cargarMasResenas(): void {
+    if (this.cargandoResenas || !this.hayMasResenas) return;
+
+    this.cargandoResenas = true;
+    this.paginaResenas++;
+
+    this.alojamientoService.obtenerResenasAlojamiento(
+      this.idAlojamiento,
+      this.paginaResenas,
+      this.TAMANO_PAGINA_RESENAS
+    )
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.cargandoResenas = false)
+      )
+      .subscribe({
+        next: (respuesta) => {
+          const nuevasResenas = respuesta.data.content;
+          this.metadataResenas = respuesta.data.pagination;
+
           if (nuevasResenas.length > 0) {
             this.resenas = [...this.resenas, ...nuevasResenas];
-          } else {
-            this.hayMasResenas = false;
           }
         },
         error: (error) => {
-          this.hayMasResenas = false;
+          this.paginaResenas--;
           const mensaje = this.mensajeHandlerService.handleHttpError(error);
           this.mensajeHandlerService.showError(mensaje);
-          this.paginaResenas--;
         }
       });
   }
@@ -358,11 +424,17 @@ export class DetalleAlojamiento implements OnInit, OnDestroy {
   }
 
   private recargarResenas(): void {
-    this.alojamientoService.obtenerResenasAlojamiento(this.idAlojamiento, 0)
+    this.paginaResenas = 0;
+    this.alojamientoService.obtenerResenasAlojamiento(
+      this.idAlojamiento,
+      0,
+      this.TAMANO_PAGINA_RESENAS
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (respuesta) => {
-          this.resenas = respuesta.data as ItemResenaDTO[];
+          this.resenas = respuesta.data.content;
+          this.metadataResenas = respuesta.data.pagination;
         },
         error: (error) => {
           console.error('Error al recargar reseñas:', error);

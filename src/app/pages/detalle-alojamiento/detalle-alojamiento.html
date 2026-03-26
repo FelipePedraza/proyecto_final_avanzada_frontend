@@ -249,20 +249,15 @@
               }
             </div>
 
-            @if (hayMasResenas) {
-              <div style="text-align: center; margin-top: 2rem;">
-                <button
-                  type="button"
-                  (click)="cargarMasResenas()"
-                  [disabled]="cargandoResenas"
-                  class="btn btn-secondary">
-                  @if (cargandoResenas) {
-                    <span class="loading-spinner"></span> Cargando...
-                  } @else {
-                    <i class="fa-solid fa-arrow-down"></i> Ver más reseñas
-                  }
-                </button>
-              </div>
+            <!-- Componente de Paginación Compacta para Reseñas -->
+            @if (metadataResenas && metadataResenas.totalPages > 1) {
+              <app-paginacion
+                [metadata]="metadataResenas"
+                [compactMode]="true"
+                [showInfo]="false"
+                [showPageSizeSelector]="false"
+                (pageChange)="onResenasPageChange($event)">
+              </app-paginacion>
             }
           } @else {
             <p style="text-align: center; color: #7F8C8D; padding: 2rem;">
