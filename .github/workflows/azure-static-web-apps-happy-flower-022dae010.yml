@@ -26,10 +26,14 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Install dependencies
-        run:
-          npm install -g
-          pnpm install
+        run: pnpm install
+
+      - name: Build app
+        run: pnpm build
 
       - name: Generate env.js
         env:
