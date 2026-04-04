@@ -60,7 +60,7 @@ For more information on using the Angular CLI, including detailed command refere
 
 ## Variables de entorno en Azure (seguridad)
 
-Este proyecto ahora genera un archivo `public/env.js` en build/start y toma sus valores para producción desde variables de entorno.
+Este proyecto ahora genera un archivo `src/assets/env.js` en build/start y toma sus valores para producción desde variables de entorno.
 
 Variables soportadas:
 

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const outputDir = resolve('public');
+const outputDir = resolve('src/assets');
 const outputFile = resolve(outputDir, 'env.js');
 
 const runtimeConfig = {
