@@ -2,16 +2,16 @@ export const environment = {
   production: false,
 
   // URL base del backend
-  apiUrl: 'http://localhost:8080/api',
+  apiUrl: 'http://localhost/api',
 
   // WebSocket
-  wsUrl: 'http://localhost:8080/ws',
+  wsUrl: 'http://localhost/ws',
 
   // Mapbox
-  mapboxToken: 'pk.eyJ1IjoicGVkcmF6YTgzMCIsImEiOiJjbWg5OTQ0MjMxY2F6MmpxNmVibG5pc2V2In0.VrZ9nEk-zYTfqaUrE2rWwg',
+  mapboxToken: 'MAP_TOKEN_DEV',
 
   // Stripe
-  stripePublicKey: 'pk_test_51T57Y9FTrFhsWQDFtni4TCqEAMO9y5omXg7QeSMccXO50w8qOljefdtfJrlBoKPVSIoWRtPkGGMmvlOSn70fItU4002EjkT7FU',
+  stripePublicKey: 'STRIPE_PUBLIC_KEY_DEV',
 
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
