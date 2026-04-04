@@ -57,3 +57,33 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Variables de entorno en Azure (seguridad)
+
+Este proyecto ahora genera un archivo `public/env.js` en build/start y toma sus valores para producción desde variables de entorno.
+
+Variables soportadas:
+
+- `API_URL`
+- `WS_URL`
+- `MAPBOX_TOKEN`
+- `STRIPE_PUBLIC_KEY`
+
+### Flujo local
+
+```bash
+API_URL=http://localhost/api \
+WS_URL=http://localhost/ws \
+MAPBOX_TOKEN=tu_token_mapbox \
+STRIPE_PUBLIC_KEY=pk_test_xxx \
+pnpm start
+```
+
+### Azure Static Web Apps
+
+1. Ve a tu recurso en Azure Portal.
+2. Entra a **Configuration** > **Application settings**.
+3. Crea las 4 variables anteriores.
+4. Guarda los cambios y vuelve a desplegar (o relanza el workflow) para que Angular reconstruya `env.js` con esos valores.
+
+> Nota: en frontend estático, los valores que use la app se inyectan en build (no son secretos en el navegador). Mantén secretos reales solo en backend/API.
