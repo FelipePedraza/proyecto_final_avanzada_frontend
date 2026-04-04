@@ -18,6 +18,7 @@ export class MapaService implements OnDestroy {
 
 
   constructor() {
+    (mapboxgl as any).workerUrl = 'https://api.mapbox.com/mapbox-gl-js/v3.16.0/mapbox-gl-csp-worker.js';
     mapboxgl.accessToken = this.MAPBOX_TOKEN;
     this.marcadorElemento.innerHTML = `      <div class="logo-icon">
         <i class="fa-solid fa-house-chimney logo-house"></i>
