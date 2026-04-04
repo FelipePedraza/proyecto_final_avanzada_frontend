@@ -1,17 +1,30 @@
+declare global {
+  interface Window {
+    __env?: {
+      apiUrl?: string;
+      wsUrl?: string;
+      mapboxToken?: string;
+      stripePublicKey?: string;
+    };
+  }
+}
+
+const runtimeEnv = window.__env ?? {};
+
 export const environment = {
   production: true,
 
   // URL base del backend
-  apiUrl: 'https://tu-dominio.com/api',
+  apiUrl: runtimeEnv.apiUrl ?? 'https://tu-dominio.com/api',
 
   // WebSocket
-  wsUrl: 'https://tu-dominio.com/ws',
+  wsUrl: runtimeEnv.wsUrl ?? 'https://tu-dominio.com/ws',
 
   // Mapbox
-  mapboxToken: 'MAP_TOKEN_PROD',
+  mapboxToken: runtimeEnv.mapboxToken ?? 'MAP_TOKEN_PROD',
 
   // Stripe
-  stripePublicKey: 'STRIPE_PUBLIC_KEY_PROD',
+  stripePublicKey: runtimeEnv.stripePublicKey ?? 'STRIPE_PUBLIC_KEY_PROD',
 
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
@@ -23,5 +36,4 @@ export const environment = {
   // Configuración de imágenes
   maxImageSize: 5 * 1024 * 1024, // 5MB
   maxImages: 10,
-
 };
