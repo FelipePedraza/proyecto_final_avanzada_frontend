@@ -5,10 +5,10 @@ const outputDir = resolve('public');
 const outputFile = resolve(outputDir, 'env.js');
 
 const runtimeConfig = {
-  apiUrl: process.env.API_URL ?? 'https://tu-dominio.com/api',
-  wsUrl: process.env.WS_URL ?? 'https://tu-dominio.com/ws',
-  mapboxToken: process.env.MAPBOX_TOKEN ?? 'MAP_TOKEN_PROD',
-  stripePublicKey: process.env.STRIPE_PUBLIC_KEY ?? 'STRIPE_PUBLIC_KEY_PROD',
+  apiUrl: process.env.API_URL,
+  wsUrl: process.env.WS_URL,
+  mapboxToken: process.env.MAPBOX_TOKEN,
+  stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
 };
 
 mkdirSync(outputDir, { recursive: true });

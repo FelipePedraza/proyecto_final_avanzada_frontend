@@ -15,16 +15,16 @@ export const environment = {
   production: true,
 
   // URL base del backend
-  apiUrl: runtimeEnv.apiUrl ?? 'https://tu-dominio.com/api',
+  apiUrl: runtimeEnv.apiUrl,
 
   // WebSocket
-  wsUrl: runtimeEnv.wsUrl ?? 'https://tu-dominio.com/ws',
+  wsUrl: runtimeEnv.wsUrl,
 
   // Mapbox
-  mapboxToken: runtimeEnv.mapboxToken ?? 'MAP_TOKEN_PROD',
+  mapboxToken: runtimeEnv.mapboxToken,
 
   // Stripe
-  stripePublicKey: runtimeEnv.stripePublicKey ?? 'STRIPE_PUBLIC_KEY_PROD',
+  stripePublicKey: runtimeEnv.stripePublicKey,
 
   // Configuración de reconexión WebSocket
   wsReconnectDelay: 5000,
