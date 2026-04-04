@@ -20,21 +20,6 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build app
-        run: pnpm build
-
       - name: Generate env.js
         env:
           API_URL: ${{ secrets.API_URL }}
