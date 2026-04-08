@@ -116,7 +116,7 @@ export class EditarPerfil implements OnInit, OnDestroy {
         this.formUtilsService.contrasenaFuerteValidador()
       ]],
       confirmarContrasena: ['', [Validators.required]]
-    }, { validators: this.formUtilsService.contrasenasMatchValidador() } as AbstractControlOptions );
+    }, { validators: this.formUtilsService.contrasenasMatchValidador('contrasenaNueva', 'confirmarContrasena') } as AbstractControlOptions );
 
     // Formulario de anfitrion
     this.anfitrionForm = this.formBuilder.group({
