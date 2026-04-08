@@ -1,6 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors,
+  AbstractControlOptions
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { PanelUsuario } from '../../components/panel-usuario/panel-usuario';
@@ -113,7 +116,7 @@ export class EditarPerfil implements OnInit, OnDestroy {
         this.formUtilsService.contrasenaFuerteValidador()
       ]],
       confirmarContrasena: ['', [Validators.required]]
-    }, { validators: this.formUtilsService.contrasenasMatchValidador() });
+    }, { validators: this.formUtilsService.contrasenasMatchValidador() } as AbstractControlOptions );
 
     // Formulario de anfitrion
     this.anfitrionForm = this.formBuilder.group({
