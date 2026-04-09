@@ -182,7 +182,7 @@ export class GestionarReservas implements OnInit, OnDestroy {
 
     this.cargando = true;
 
-    this.reservaService.obtenerReservasAlojamiento(
+    this.alojamientoService.obtenerReservasAlojamiento(
       alojamientoId,
       estado,
       undefined,
@@ -228,10 +228,10 @@ export class GestionarReservas implements OnInit, OnDestroy {
 
     // Cargar ambos estados en paralelo
     forkJoin({
-      completadas: this.reservaService.obtenerReservasAlojamiento(
+      completadas: this.alojamientoService.obtenerReservasAlojamiento(
         alojamientoId, ReservaEstado.COMPLETADA, undefined, undefined, pagina, this.TAMANO_PAGINA, 'fechaEntrada,desc'
       ).pipe(catchError(() => of({ data: { content: [], pagination: { currentPage: pagina, pageSize: this.TAMANO_PAGINA, totalElements: 0, totalPages: 0, first: true, last: true, hasNext: false, hasPrevious: false } } }))),
-      canceladas: this.reservaService.obtenerReservasAlojamiento(
+      canceladas: this.alojamientoService.obtenerReservasAlojamiento(
         alojamientoId, ReservaEstado.CANCELADA, undefined, undefined, pagina, this.TAMANO_PAGINA, 'fechaEntrada,desc'
       ).pipe(catchError(() => of({ data: { content: [], pagination: { currentPage: pagina, pageSize: this.TAMANO_PAGINA, totalElements: 0, totalPages: 0, first: true, last: true, hasNext: false, hasPrevious: false } } })))
     })
@@ -305,7 +305,7 @@ export class GestionarReservas implements OnInit, OnDestroy {
     // Nota: En una implementación real, el backend debería soportar filtro por múltiples alojamientos
     const primerAlojamiento = this.alojamientosUsuario[0];
 
-    this.reservaService.obtenerReservasAlojamiento(
+    this.alojamientoService.obtenerReservasAlojamiento(
       primerAlojamiento.id,
       estado,
       undefined,
@@ -368,7 +368,7 @@ export class GestionarReservas implements OnInit, OnDestroy {
 
     // Cargar reservas de todos los alojamientos para el calendario
     const observables = this.alojamientosUsuario.map(alojamiento =>
-      this.reservaService.obtenerReservasAlojamiento(
+      this.alojamientoService.obtenerReservasAlojamiento(
         alojamiento.id,
         undefined, // Todos los estados
         undefined,
