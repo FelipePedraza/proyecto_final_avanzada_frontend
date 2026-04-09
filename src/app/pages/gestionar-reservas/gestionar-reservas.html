@@ -18,6 +18,24 @@
 
       @if (!cargando) {
 
+        <!-- Selector de Alojamiento -->
+        <div class="alojamiento-selector" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--light-green); border-radius: 12px;">
+          <label for="alojamientoSelect" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark-green);">
+            <i class="fa-solid fa-house"></i> Seleccionar Alojamiento
+          </label>
+          <select
+            id="alojamientoSelect"
+            (change)="cambiarAlojamiento($any($event.target).value === 'todos' ? 'todos' : +$any($event.target).value)"
+            style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-color); border-radius: 8px; font-size: 1rem;">
+            <option value="todos">Todos los alojamientos</option>
+            @for (alojamiento of alojamientosUsuario; track alojamiento.id) {
+              <option [value]="alojamiento.id" [selected]="alojamientoSeleccionadoId === alojamiento.id">
+                {{ alojamiento.titulo }}
+              </option>
+            }
+          </select>
+        </div>
+
         <div class="calendar-header-new">
           <div class="header-left">
             <button type="button" class="btn btn-secondary" (click)="mesAnterior()">
@@ -70,7 +88,7 @@
         <div class="reservations-list">
 
           @if (tabActiva === 'pendientes') {
-            <h3>Reservas Pendientes ({{ reservasPendientes.length }})</h3>
+            <h3>Reservas Pendientes ({{ paginacionPendientes?.totalElements || 0 }})</h3>
             @if (reservasPendientes.length > 0) {
               @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
@@ -128,7 +146,7 @@
           }
 
           @if (tabActiva === 'confirmadas') {
-            <h3>Reservas Confirmadas ({{ reservasConfirmadas.length }})</h3>
+            <h3>Reservas Confirmadas ({{ paginacionConfirmadas?.totalElements || 0 }})</h3>
             @if (reservasConfirmadas.length > 0) {
               @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
@@ -183,7 +201,7 @@
           }
 
           @if (tabActiva === 'historial') {
-            <h3>Historial de Reservas ({{ reservasHistorial.length }})</h3>
+            <h3>Historial de Reservas ({{ paginacionHistorial?.totalElements || 0 }})</h3>
             @if (reservasHistorial.length > 0) {
               @for (reserva of reservasPaginadas; track reserva.id) {
                 <div class="reservation-card-compact">
